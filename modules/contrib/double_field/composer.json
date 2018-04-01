@@ -1,0 +1,12 @@
+{
+  "name": "drupal/double_field",
+  "type": "drupal-module",
+  "description": "Provides a Drupal field type with two separate subfields.",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "https://www.drupal.org/project/double_field",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/double_field",
+    "source": "http://cgit.drupalcode.org/double_field"
+  }
+}

@@ -1,0 +1,30 @@
+/**
+ * @file
+ * Bartik layout styling.
+ */
+
+/**
+ * Container
+ */
+.layout-container {
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+@media all and (min-width: 851px) {
+  .layout-container {
+    max-width: 1600px;
+  }
+}
+
+/**
+ * Main
+ */
+.layout-main-wrapper {
+  min-height: 600px;
+}
+.layout-main {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}

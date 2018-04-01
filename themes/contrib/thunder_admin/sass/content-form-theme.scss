@@ -1,0 +1,112 @@
+/**
+ * @file
+ * Styles for content forms.
+ */
+
+// [TJW - refactor] TODO
+
+@import 'variables';
+
+.content-form__advanced-toggle,
+.content-form__advanced {
+  background: $primary-color-darker;
+}
+
+.content-form__advanced-toggle {
+  border: 0;
+  color: white;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding-bottom: 1em;
+
+  &:focus,
+  &:active {
+    box-shadow: none;
+    outline: none;
+  }
+
+  &:hover {
+    background: $primary-color-darkest;
+
+    svg {
+      path {
+        fill: $primary-color-intense;
+      }
+    }
+  }
+}
+
+.content-form__actions {
+  z-index: 101;
+
+  .button--danger {
+    margin: 0;
+    text-transform: none;
+    color: $gray-light;
+    font-size: 14px;
+    font-weight: bold;
+  }
+}
+
+@include for-tablet-portrait-and-up {
+  /* Fixed action bar */
+  .content-form__actions {
+    background: $primary-color-darker;
+  }
+}
+
+.content-form__form-section {
+  background: $primary-color-lightest;
+  border-radius: $base-border-radius;
+  padding-top: 2.5rem;
+
+  & > legend,
+  & > summary {
+    padding-left: 0.4em;
+    text-transform: none;
+    font-size: 1rem;
+    border-left: 5px solid $primary-color-intense;
+    top: 1rem;
+  }
+}
+
+.entity-meta--advanced {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  font-size: 0.75rem;
+  margin: $base-space 0 $base-space $base-space-2x;
+
+  .entity-meta__header,
+  details {
+    background: transparent;
+    border-top: 0;
+    border-bottom: 0;
+    box-shadow: none;
+  }
+
+  .entity-meta__title {
+    text-shadow: none;
+  }
+
+  details {
+    border-top: 2px solid $primary-color-dark;
+    border-bottom: 2px solid $primary-color-dark;
+
+    & + details {
+      border-top: 0;
+    }
+
+    &[open] {
+      background-image: none;
+      border-top-width: 2px;
+    }
+
+    & > summary {
+      text-shadow: none;
+      font-size: 0.875rem;
+    }
+  }
+
+}

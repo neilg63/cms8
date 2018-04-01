@@ -1,0 +1,5 @@
+name: Json Image Styles
+type: module
+description: 'Add image style uris to json encoded image paths'
+version: '8.x-1.0'
+core: '8.x'

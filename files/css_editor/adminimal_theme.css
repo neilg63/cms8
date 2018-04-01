@@ -1,0 +1,11 @@
+.adminimal .toolbar .toolbar-menu,
+.adminimal .toolbar .toolbar-tray,
+.toolbar .toolbar-bar {
+  background:none;
+}
+
+.toolbar-tray-horizontal ul li.menu-item--expanded ul li {
+  background-position: center right;
+  background-image: url(/modules/contrib/admin_toolbar/misc/icons/0074bd/chevron-right.svg);
+  background-repeat: no-repeat;
+}

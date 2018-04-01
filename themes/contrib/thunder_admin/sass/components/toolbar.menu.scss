@@ -1,0 +1,12 @@
+// [TJW - refactor] NEW (todo: taken from toolbar core module?)
+
+/**
+ * @file toolbar.menu.css
+ */
+
+@import 'variables';
+
+.toolbar .toolbar-tray .menu-item--active-trail > .toolbar-box a,
+.toolbar .toolbar-tray a.is-active {
+  color: $primary-color-intense;
+}

@@ -1,0 +1,96 @@
+jsonstyles.siteinfo:
+  path: '/jsonstyles/siteinfo'
+  defaults:
+    _controller: '\Drupal\jsonstyles\Controller\SiteInfoController::jsonView'
+  requirements:
+    _access: 'TRUE'
+
+jsonstyles.edited:
+  path: '/jsonstyles/edited'
+  defaults:
+    _controller: '\Drupal\jsonstyles\Controller\SiteInfoController::editedView'
+  requirements:
+    _access: 'TRUE'
+
+jsonstyles.user:
+  path: '/jsonstyles/user'
+  defaults:
+    _controller: '\Drupal\jsonstyles\Controller\SiteInfoController::userView'
+  requirements:
+    _access: 'TRUE'
+
+jsonstyles.css:
+  path: '/jsonstyles/styleinfo'
+  defaults:
+    _controller: '\Drupal\jsonstyles\Controller\SiteInfoController::styleView'
+  requirements:
+    _access: 'TRUE'
+
+jsonstyles.colorscss:
+  path: '/jsonstyles/colors.css'
+  defaults:
+    _controller: '\Drupal\jsonstyles\Controller\SiteInfoController::colorCssView'
+  requirements:
+    _access: 'TRUE'
+
+jsonstyles.match:
+  path: '/jsonstyles/match/{path}'
+  defaults:
+    _controller: '\Drupal\jsonstyles\Controller\SiteInfoController::matchView'
+  requirements:
+    _access: 'TRUE'
+
+jsonstyles.home:
+  path: '/jsonstyles/home'
+  defaults:
+    _controller: '\Drupal\jsonstyles\Controller\ContentController::home'
+  requirements:
+    _access: 'TRUE'
+
+
+jsonstyles.productsFull:
+  path: '/jsonstyles/products-full'
+  defaults:
+    _controller: '\Drupal\jsonstyles\Controller\ContentController::productsFull'
+  requirements:
+    _access: 'TRUE'
+
+jsonstyles.productsFullMore:
+  path: '/jsonstyles/products-full-more'
+  defaults:
+    _controller: '\Drupal\jsonstyles\Controller\ContentController::productsFullMore'
+  requirements:
+    _access: 'TRUE'
+
+jsonstyles.blogs:
+  path: '/jsonstyles/blogs'
+  defaults:
+    _controller: '\Drupal\jsonstyles\Controller\ContentController::blogs'
+  requirements:
+    _access: 'TRUE'
+
+jsonstyles.nodeFull.nid:
+  path: '/jsonstyles/node-full/{node}'
+  defaults:
+    _controller: '\Drupal\jsonstyles\Controller\ContentController::nodeFull'
+  requirements:
+    _access: 'TRUE'
+  options:
+    parameters:
+      node:
+        type: entity:node
+
+admin.content.writeSnippets:
+  path: '/admin/content/write-snippets'
+  defaults:
+    _controller: '\Drupal\jsonstyles\Controller\SiteInfoController::writeSnippets'
+  requirements:
+    _access: 'TRUE'
+
+admin.content.siteVariables:
+  path: '/admin/content/site-variables'
+  defaults:
+    _form: '\Drupal\jsonstyles\Form\JsonstylesSettingsForm'
+    _title: 'Site-wide variables'
+  requirements:
+    _permission: 'administer google analytics'

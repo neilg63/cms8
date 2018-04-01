@@ -1,0 +1,10 @@
+admin.content.writeSnippets:
+  title: 'Rebuild Snippets'
+  parent: system.admin_content
+  description: 'Rebuild snippets used by the Frontend framework for SEO purposes.'
+  route_name: admin.content.writeSnippets
+admin.content.siteVariables:
+  title: 'Site-wide variables'
+  parent: system.admin_content
+  description: 'Edit footer copyright notice and contact email'
+  route_name: admin.content.siteVariables

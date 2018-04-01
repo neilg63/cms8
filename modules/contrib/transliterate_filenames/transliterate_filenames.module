@@ -1,0 +1,47 @@
+<?php
+
+/**
+ * @file
+ * Contains transliterate_filenames.module.
+ */
+
+use Drupal\file\FileInterface;
+
+
+/**
+ * Implements hook_file_validate().
+ */
+function transliterate_filenames_file_validate(FileInterface $file) {
+  $basename = drupal_basename($file->destination);
+  $basename = transliterate_filenames_transliteration($basename);
+  $dirname = drupal_dirname($file->destination);
+  $file->destination = file_create_filename($basename, $dirname);
+}
+
+/**
+ * Implements callback for hook_file_validate().
+ */
+function transliterate_filenames_transliteration($filename) {
+  $filename = \Drupal::transliteration()->transliterate($filename);
+  // Replace whitespace.
+  $filename = str_replace(' ', '_', $filename);
+  // Remove remaining unsafe characters.
+  $filename = preg_replace('![^0-9A-Za-z_.-]!', '', $filename);
+  // Remove multiple consecutive non-alphabetical characters.
+  $filename = preg_replace('/(_)_+|(\.)\.+|(-)-+/', '\\1\\2\\3', $filename);
+  // Force lowercase to prevent issues on case-insensitive file systems.
+  $filename = strtolower($filename);
+
+  //For empty
+  $name = explode('.', $filename);
+  $name = reset($name);
+  $extension = explode(".", $filename);
+  $extension = end($extension);
+
+  //Is empty
+  if (!$name) {
+    $filename = md5(rand()) . '.' . $extension;
+  }
+
+  return $filename;
+}

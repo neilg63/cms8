@@ -1,0 +1,433 @@
+<?php
+
+/**
+ * @file
+ * Functions to support theming in the Thunder Admin theme.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
+use Drupal\Core\Entity\EntityFormInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
+
+/**
+ * Implements hook_preprocess_HOOK() for HTML document templates.
+ */
+function thunder_admin_preprocess_html(&$variables) {
+  // If on a node or term add or edit page, add a class for enabling advanced
+  // tray functionality.
+  if (_thunder_admin_apply_advanced_vertical_tabs()) {
+    $variables['attributes']['class'][] = 'advanced-sidebar-tray';
+    $variables['attributes']['class'][] = 'entity-add-or-edit-form';
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for menu-local-tasks templates.
+ *
+ * Use preprocess hook to set #attached to child elements
+ * because they will be processed by Twig and drupal_render will
+ * be invoked.
+ */
+function thunder_admin_preprocess_menu_local_tasks(&$variables) {
+  if (!empty($variables['primary'])) {
+    $variables['primary']['#attached'] = [
+      'library' => [
+        'thunder_admin/drupal.nav-tabs',
+      ],
+    ];
+  }
+  elseif (!empty($variables['secondary'])) {
+    $variables['secondary']['#attached'] = [
+      'library' => [
+        'thunder_admin/drupal.nav-tabs',
+      ],
+    ];
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for menu-local-task templates.
+ */
+function thunder_admin_preprocess_menu_local_task(&$variables) {
+  $variables['attributes']['class'][] = 'tabs__tab';
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for list of available node type templates.
+ */
+function thunder_admin_preprocess_node_add_list(&$variables) {
+  if (!empty($variables['content'])) {
+    /** @var \Drupal\node\NodeTypeInterface $type */
+    foreach ($variables['content'] as $type) {
+      $variables['types'][$type->id()]['label'] = $type->label();
+      $variables['types'][$type->id()]['url'] = \Drupal::url('node.add', ['node_type' => $type->id()]);
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for block content add list templates.
+ *
+ * Displays the list of available custom block types for creation, adding
+ * separate variables for the label and url.
+ */
+function thunder_admin_preprocess_block_content_add_list(&$variables) {
+  if (!empty($variables['content'])) {
+    foreach ($variables['content'] as $type) {
+      $variables['types'][$type->id()]['label'] = $type->label();
+      $options = ['query' => \Drupal::request()->query->all()];
+      $variables['types'][$type->id()]['url'] = \Drupal::url('block_content.add_form', ['block_content_type' => $type->id()], $options);
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_block() for block content.
+ *
+ * Disables contextual links for all blocks.
+ */
+function thunder_admin_preprocess_block(&$variables) {
+  _thunder_admin_remove_contextual_links($variables);
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for block admin page templates.
+ */
+function thunder_admin_preprocess_admin_block_content(&$variables) {
+  if (!empty($variables['content'])) {
+    foreach ($variables['content'] as $key => $item) {
+      $variables['content'][$key]['url'] = $item['url']->toString();
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for menu-local-action templates.
+ */
+function thunder_admin_preprocess_menu_local_action(array &$variables) {
+  $variables['link']['#options']['attributes']['class'][] = 'button--primary';
+  $variables['link']['#options']['attributes']['class'][] = 'button--small';
+
+  // We require Modernizr's touch test for button styling.
+  $variables['#attached']['library'][] = 'core/modernizr';
+}
+
+/**
+ * Implements hook_element_info_alter().
+ */
+function thunder_admin_element_info_alter(&$type) {
+  // We require Modernizr for button styling.
+  if (isset($type['button'])) {
+    $type['button']['#attached']['library'][] = 'core/modernizr';
+  }
+}
+
+/**
+ * Implements hook_preprocess_install_page().
+ */
+function thunder_admin_preprocess_install_page(&$variables) {
+  // thunder_admin has custom styling for the install page.
+  $variables['#attached']['library'][] = 'thunder_admin/install-page';
+}
+
+/**
+ * Implements hook_preprocess_maintenance_page().
+ */
+function thunder_admin_preprocess_maintenance_page(&$variables) {
+  // thunder_admin has custom styling for the maintenance page.
+  $variables['#attached']['library'][] = 'thunder_admin/maintenance-page';
+}
+
+/**
+ * Implements theme_preprocess_field_multiple_value_form().
+ *
+ * Add themable classes to multiple value field table for paragraphs field.
+ */
+function thunder_admin_preprocess_field_multiple_value_form(&$variables) {
+  if (!empty($variables['element']['#attached']['library']) && in_array('paragraphs/drupal.paragraphs.admin', $variables['element']['#attached']['library'])) {
+    $variables['table']['#attributes']['class'][] = 'field-multiple-table--paragraphs';
+
+    $hasDeprecatedAddInBetween = !empty($variables['element']['add_more']['paragraphs_add_dialog_template']);
+    $hasRowBasedAddInBetween = !empty($variables['element']['add_more']['paragraphs_add_in_between_button_template']);
+
+    // Add custom style for deprecated paragraph type (relevant only for table).
+    if ($hasDeprecatedAddInBetween && !$hasRowBasedAddInBetween) {
+      $variables['table']['#attributes']['class'][] = 'field-multiple-table--paragraphs--deprecated';
+    }
+    elseif ($hasRowBasedAddInBetween) {
+      $variables['table']['#attributes']['class'][] = 'field-multiple-table--paragraphs--row-based-add-in-between';
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for media templates.
+ */
+function thunder_admin_preprocess_media(&$variables) {
+  // Disables contextual links for all media entities.
+  _thunder_admin_remove_contextual_links($variables);
+
+  // Normalize paragraph_preview output.
+  if ($variables['elements']['#view_mode'] === 'paragraph_preview') {
+    // For media entitites of type gallery and image use source field as
+    // thumbnail. Instagram, pinterest, twitter and video already provide a
+    // thumbnail field.
+    // Could remove after #2923971 has landed and compatibility with older
+    // thunder versions can be dropped.
+    // @see https://www.drupal.org/node/2923971
+    // @see media--paragraph-preview.html.twig
+    $thumbnail_field = '';
+    /** @var \Drupal\media\MediaTypeInterface $media_type */
+    $media_type = $variables['elements']['#media']->bundle->entity;
+    if ($media_type->getEntityType()->getProvider() == 'media_entity' && isset($media_type->getTypeConfiguration()['source_field'])) {
+      $thumbnail_field = $media_type->getTypeConfiguration()['source_field'];
+    }
+    elseif ($media_type->getEntityType()->getProvider() == 'media' && isset($media_type->get('source_configuration')['source_field'])) {
+      $thumbnail_field = $media_type->get('source_configuration')['source_field'];
+    }
+    if (isset($variables['content'][$thumbnail_field]) && !isset($variables['content']['thumbnail'])) {
+      $variables['content']['thumbnail'] = $variables['content'][$thumbnail_field];
+      unset($variables['content'][$thumbnail_field]);
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for paragraph templates.
+ */
+function thunder_admin_preprocess_paragraph(&$variables) {
+  if ($variables['view_mode'] == 'preview') {
+    $variables['attributes']['class'][] = 'paragraph-form-item__preview';
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for CKEditor settings toolbar templates.
+ */
+function thunder_admin_preprocess_ckeditor_settings_toolbar(&$variables) {
+  // Sort disabled buttons for visual regression testing on
+  // admin/config/content/formats/manage/basic_html.
+  usort($variables['disabled_buttons'], function ($a, $b) {
+    return strcmp($a['attributes']->offsetGet('data-drupal-ckeditor-button-name')->value(),
+      $b['attributes']->offsetGet('data-drupal-ckeditor-button-name')->value());
+  });
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK_alter().
+ *
+ * Provide additional suggestions for form inputs and buttons.
+ */
+function thunder_admin_theme_suggestions_field_alter(&$suggestions, $variables) {
+  $view_mode = $variables['element']['#view_mode'];
+  $field_name = $variables['element']['#field_name'];
+  $suggestions[] = 'field__' . $field_name . '__' . $view_mode;
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK_alter().
+ *
+ * Provide additional suggestions for form inputs and buttons.
+ */
+function thunder_admin_theme_suggestions_input_alter(&$suggestions, $variables) {
+  // Add suggestions for buttons.
+  if (isset($variables['element']['#type']) && $variables['element']['#type'] == 'submit') {
+    // Paragraph widget buttons:
+    if (isset($variables['element']['#paragraphs_mode'])) {
+      $suggestions[] = 'input__submit__paragraphs_' . $variables['element']['#paragraphs_mode'];
+    }
+    // Our own defined key "button action type" determined in form alter hooks.
+    if (isset($variables['element']['#button_action_type'])) {
+      $suggestions[] = 'input__submit__' . $variables['element']['#button_action_type'];
+    }
+  }
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK_alter().
+ *
+ * Provide additional suggestions for form element.
+ */
+function thunder_admin_theme_suggestions_form_element_alter(&$suggestions, $variables) {
+  $suggestions[] = 'form_element__' . $variables['element']['#type'];
+}
+
+/**
+ * Implements hook_form_alter() for thunder_admin theme.
+ */
+function thunder_admin_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if (!empty($form['advanced']) && (_thunder_admin_apply_advanced_vertical_tabs())) {
+    _thunder_admin_attach_advanced_vertical_tabs($form, $form_state);
+    $form['#theme'] = ['node_edit_form'];
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for \Drupal\node\NodeForm.
+ *
+ * Changes vertical tabs to container and adds meta information.
+ */
+function thunder_admin_form_node_form_alter(&$form, FormStateInterface $form_state) {
+  /** @var \Drupal\node\NodeInterface $node */
+  $node = $form_state->getFormObject()->getEntity();
+
+  _thunder_admin_content_form_alter_helper($form, $form_state);
+
+  // @todo: This might be better moved to a module.
+  $last_saved_info = !$node->isNew() ? format_date($node->getChangedTime(), 'short') : t('Not saved yet');
+  $author_info = (!empty($node->getOwner()->getDisplayName())) ? $node->getOwner()->getDisplayName() : t('Anonymous');
+  $form['meta'] = [
+    '#attributes' => ['class' => ['entity-meta__header']],
+    '#type' => 'container',
+    '#group' => 'advanced',
+    '#weight' => -100,
+    'published' => [
+      '#type' => 'html_tag',
+      '#tag' => 'h3',
+      '#value' => $node->isPublished() ? t('Published') : t('Not published'),
+      '#access' => !$node->isNew(),
+      '#attributes' => [
+        'class' => 'entity-meta__title',
+      ],
+    ],
+    'changed' => [
+      '#type' => 'item',
+      '#wrapper_attributes' => ['class' => ['entity-meta__last-saved', 'container-inline']],
+      '#markup' => '<h4 class="label inline">' . t('Last saved') . '</h4> ' . $last_saved_info,
+    ],
+    'author' => [
+      '#type' => 'item',
+      '#wrapper_attributes' => ['class' => ['author', 'container-inline']],
+      '#markup' => '<h4 class="label inline">' . t('Author') . '</h4> ' . $author_info,
+    ],
+  ];
+}
+
+/**
+ * Implements hook_form_taxonomy_term_form_alter().
+ */
+function thunder_admin_form_taxonomy_term_form_alter(array &$form, FormStateInterface $form_state) {
+  _thunder_admin_content_form_alter_helper($form, $form_state);
+}
+
+/**
+ * Helper function for content form alter hooks.
+ *
+ * @param array $form
+ *   The article form.
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
+ *   The form state object.
+ */
+function _thunder_admin_content_form_alter_helper(array &$form, FormStateInterface $form_state) {
+  if ($form_state->getFormObject() instanceof EntityFormInterface) {
+    $entity = $form_state->getFormObject()->getEntity();
+    if ($entity instanceof FieldableEntityInterface) {
+      foreach ($entity->getFieldDefinitions() as $definition) {
+        $field_name = $definition->getName();
+        $component = $form_state->getStorage()['form_display']->getComponent($field_name);
+        if (!empty($component['type']) && ($component['type'] === 'entity_reference_paragraphs')) {
+          // Set classes to the paragraphs items to be able to style them.
+          $form[$field_name]['#attached']['library'][] = 'thunder_admin/paragraphs.adjustments';
+
+          foreach (Element::children($form[$field_name]['widget']) as $i) {
+            if (is_numeric($i)) {
+              _thunder_admin_prepare_single_paragraph($form[$field_name]['widget'][$i]);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Add classes to paragraph element.
+ *
+ * @param array $paragraph
+ *   Single paragraph form element.
+ */
+function _thunder_admin_prepare_single_paragraph(array &$paragraph) {
+  // Add a base class to the paragraph reference field item.
+  $paragraph['#attributes']['class'][] = 'paragraph-form-item';
+
+  // Add modifier classes based upon the display mode.
+  if (isset($paragraph['preview'])) {
+    $paragraph['#attributes']['class'][] = 'paragraph-form-item--has-preview';
+  }
+  elseif (isset($paragraph['subform'])) {
+    $paragraph['#attributes']['class'][] = 'paragraph-form-item--has-subform';
+  }
+
+  // Add a class to the container holding the actions.
+  if (isset($paragraph['top'])) {
+    $paragraph['top']['#attributes']['class'] = ['paragraph-form-item__actions'];
+    $paragraph['top']['#weight'] = 10;
+  }
+
+  // Remove dropbutton appearance for paragraph op links.
+  if (isset($paragraph['top']['links'])) {
+    unset($paragraph['top']['links']['#theme_wrappers']);
+    unset($paragraph['top']['links']['prefix']);
+    unset($paragraph['top']['links']['suffix']);
+
+    $paragraph['top']['links']['#prefix'] = '<ul class="paragraph-form-item__links">';
+    $paragraph['top']['links']['#suffix'] = '</ul>';
+  }
+
+  // On click on restore, restore to collapsed instead of edit mode.
+  if (isset($paragraph['top']['links']['restore_button'])) {
+    $paragraph['top']['links']['restore_button']['#paragraphs_mode'] = 'collapsed';
+  }
+}
+
+/**
+ * Helper function for attaching entity meta appearance.
+ *
+ * @param array $form
+ *   The article form.
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
+ *   The form state object.
+ */
+function _thunder_admin_attach_advanced_vertical_tabs(array &$form, FormStateInterface $form_state) {
+  $form['advanced']['#type'] = 'container';
+  $form['advanced']['#attributes']['class'][] = 'entity-meta--advanced';
+  $form['advanced']['#attributes']['class'][] = 'color-scheme-inverted';
+}
+
+/**
+ * Checks if advanced vertical tabs should apply on this route.
+ *
+ * @return bool
+ *   Should apply or not.
+ */
+function _thunder_admin_apply_advanced_vertical_tabs() {
+
+  $route = Drupal::service('current_route_match');
+  switch ($route->getRouteName()) {
+    case 'entity.taxonomy_term.add_form':
+    case 'node.add':
+    case 'entity.node.content_translation_add':
+      return TRUE;
+  }
+
+  if ($route->getRouteObject()->getDefault("_entity_form")) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Removes contextual links from given variables.
+ *
+ * @param array $variables
+ *   An associative array.
+ */
+function _thunder_admin_remove_contextual_links(array &$variables) {
+  if (isset($variables['title_suffix']['contextual_links'])) {
+    unset($variables['title_suffix']['contextual_links']);
+    unset($variables['elements']['#contextual_links']);
+    $variables['attributes']['class'] = array_diff($variables['attributes']['class'], ['contextual-region']);
+  }
+}

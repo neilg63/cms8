@@ -1,0 +1,119 @@
+// [TJW - refactor] NEW
+
+/**
+ * Form element.
+ */
+@import 'variables';
+
+.form-item {
+
+}
+
+.form-item__field-wrapper {
+  display: flex;
+  align-items: center;
+
+  .field-suffix {
+    padding-left: 5px;
+  }
+
+  .form-textarea-wrapper,
+  .image-style-preview {
+    flex: 1 1 auto;
+  }
+}
+
+/* form item description toggle functionality */
+
+.details__toggle-description,
+.form-item__toggle-description {
+  padding: 0.5em;
+  flex: 0 0 auto;
+  align-self: flex-end;
+
+  .no-touchevents & {
+    position: relative;
+    top: -2px;
+    left: 2px;
+    margin: 0;
+    padding: 0 0.15em;
+    width: 22px;
+    height: 22px;
+    svg {
+      max-width: 100%;
+      max-height: 100%;
+    }
+  }
+
+  .button__icon {
+    display: block;
+    height: 100%;
+    width: 100%;
+    svg {
+      path {
+        fill: $primary-color-light;
+      }
+    }
+  }
+}
+/* stylelint-disable no-descending-specificity */
+.details__toggle-description {
+  float: right;
+  display: none;
+
+  [open] > summary > & {
+    display: block;
+  }
+}
+/* stylelint-enable no-descending-specificity */
+
+.form-item__toggle-description-placeholder {
+  display: none;
+}
+
+body:not(.entity-add-or-edit-form) {
+  .details__toggle-description,
+  .form-item__toggle-description {
+    display: none;
+  }
+}
+
+.js body.entity-add-or-edit-form {
+  .js-details-description,
+  .js-form-item__description {
+    visibility: hidden;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: all 0.3s;
+
+  }
+  .is-description-visible .js-details-description,
+  .is-description-visible .js-form-item__description {
+    visibility: visible;
+    max-height: 5000px;
+    opacity: 1;
+    transition: all 0.3s;
+  }
+}
+
+.form-type-vertical-tabs {
+  > .form-item__field-wrapper {
+    display: block;
+  }
+}
+
+#edit-title-wrapper,
+#edit-field-seo-title-wrapper,
+#edit-field-tags-wrapper,
+#edit-field-teaser-text-wrapper {
+  max-width: 700px;
+
+  input {
+    width: 100%;
+  }
+
+  .form-item__toggle-description {
+    margin-right: -22px;
+  }
+}

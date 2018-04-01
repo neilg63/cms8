@@ -1,0 +1,24 @@
+services:
+  serializer.normalizer.field_item.jsonapi_extras:
+    class: Drupal\jsonapi_extras\Normalizer\FieldItemNormalizer
+    arguments:
+      - '@serializer.normalizer.field_item.jsonapi'
+      - '@entity_type.manager'
+      - '@plugin.manager.resource_field_enhancer'
+    tags:
+      - { name: jsonapi_normalizer_do_not_use_removal_imminent, priority: 25 }
+
+  serializer.normalizer.entity.jsonapi_extras:
+    class: Drupal\jsonapi_extras\Normalizer\ContentEntityNormalizer
+    arguments: ['@jsonapi.link_manager', '@jsonapi.resource_type.repository', '@entity_type.manager']
+    tags:
+      - { name: jsonapi_normalizer_do_not_use_removal_imminent, priority: 22 }
+  serializer.normalizer.config_entity.jsonapi_extras:
+    class: Drupal\jsonapi_extras\Normalizer\ConfigEntityNormalizer
+    arguments: ['@jsonapi.link_manager', '@jsonapi.resource_type.repository', '@entity_type.manager']
+    tags:
+      - { name: jsonapi_normalizer_do_not_use_removal_imminent, priority: 22 }
+
+  plugin.manager.resource_field_enhancer:
+    class: Drupal\jsonapi_extras\Plugin\ResourceFieldEnhancerManager
+    parent: default_plugin_manager

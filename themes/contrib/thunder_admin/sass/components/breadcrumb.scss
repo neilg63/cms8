@@ -1,0 +1,23 @@
+@import 'variables';
+
+/**
+ * @file
+ * Breadcrumbs.
+ */
+.breadcrumb {
+  line-height: 1em; // copied from seven
+  padding: 0.6em 0 1em;
+
+  li { //added
+    color: $gray-light;
+  }
+
+  a { // added
+    color: inherit;
+    font-size: 10px;
+    line-height: 12px;
+    /* Position breadcrumb links above tabs nav #2922529 */
+    position: relative;
+    z-index: 1;
+  }
+}

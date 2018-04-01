@@ -1,0 +1,10 @@
+name: Transliterate filenames
+type: module
+description: Transliterate filenames to latin for uploads
+# core: 8.x
+
+# Information added by Drupal.org packaging script on 2017-09-01
+version: '8.x-1.1'
+core: '8.x'
+project: 'transliterate_filenames'
+datestamp: 1504262050

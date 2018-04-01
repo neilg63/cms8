@@ -1,0 +1,5 @@
+name: Ecwid Integration
+type: module
+description: 'Embed Ecwid widgets in Drupal entities'
+version: '8.x-1.0'
+core: '8.x'

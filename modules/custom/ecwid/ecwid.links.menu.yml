@@ -1,0 +1,15 @@
+ecwid.products:
+  title: 'Ecwid Product Feed'
+  parent: json.ecwid
+  description: 'Output all ecwid products related to a shop with IDs as JSON.'
+  route_name: ecwid.products
+admin.content.ecwid:
+  title: 'List Ecwid Products'
+  parent: system.admin_content
+  description: 'Display all ecwid products related to a shop with IDs'
+  route_name: admin.content.ecwid
+admin.config.services.ecwid:
+  title: 'Configure Ecwid Store details'
+  parent: system.config.services
+  description: 'Enter store ID for synchronisation with mapped entities'
+  route_name: admin.config.services.ecwid

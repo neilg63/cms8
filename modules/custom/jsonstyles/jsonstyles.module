@@ -1,0 +1,552 @@
+<?php
+
+use Drupal\image\Entity\ImageStyle;
+use Drupal\responsive_image\Entity\ResponsiveImageStyle;
+use Drupal\views\Plugin\views\cache\CachePluginBase;
+use Drupal\views\ViewExecutable;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Drupal\paragraphs\Entity\Paragraph;
+use Drupal\Core\Url;
+use Drupal\Component\Utility\Unicode;
+use Drupal\file\Entity\File;
+
+
+function jsonstyles_entity_update(Drupal\Core\Entity\EntityInterface $entity) {
+  if ($entity instanceof Drupal\node\Entity\Node) {
+    jsonstyles_render_node_snippet($entity, null, true);
+  }
+}
+
+function jsonstyles_entity_insert(Drupal\Core\Entity\EntityInterface $entity) {
+  if ($entity instanceof Drupal\node\Entity\Node) {
+    jsonstyles_render_node_snippet($entity, null, true);
+  }
+}
+
+function jsonstyles_render_node_snippet(Drupal\Core\Entity\EntityInterface $entity, $alias = '', $redirect = false) {
+  $path = '/node/' . $entity->id();
+  if (empty($alias)) {
+    $alias = \Drupal::service('path.alias_manager')->getAliasByPath($path);
+  }
+  if (is_string($alias) && $alias != $path) {
+    $file_root = str_replace('/','__',$alias);
+    
+    $file_name = $file_root . '.html';
+    $render = node_view($entity,'default');
+    jsonstyles_write_snippet($file_name, render($render) );
+
+    $file_name = $file_root . '.title';
+    jsonstyles_write_snippet($file_name, $entity->getTitle());
+
+    $tags = jsonstyles_metatags_from_entity($entity);
+    if (!empty($tags)) {
+      $file_name = $file_root . '.meta';
+      $snippet = render($tags);
+      if (!empty($snippet)) {
+        jsonstyles_write_snippet($file_name, $snippet);
+      }
+    }
+  }
+  if ($redirect) {
+    $path = '/admin/content';
+    if ($entity->bundle() == 'project') {
+      $path .= '/projects';
+    }
+    $response = new RedirectResponse($path);
+    $response->send();
+    return;
+  }
+}
+
+function jsonstyles_write_snippet($file_name = '',$content = '') {
+  $fileDir = DRUPAL_ROOT . '/files/snippets';
+  if (!empty($file_name) && !empty($content)) {
+    if (!is_dir($fileDir)) {
+      mkdir($fileDir);
+      usleep(100);
+    }
+    if (is_dir($fileDir)) {
+      if ($content instanceof \Drupal\Core\Render\Markup) {
+        $content = (string) $content;
+      }
+      if (is_string($content)) {
+        $content = preg_replace('#\sdata-[a-z0-9-]*="[^"]*?"#i',"",$content);
+        $content = preg_replace('#\s\s+#'," ",$content);
+        $content = preg_replace('#(</\w+>)\s+(</?\w+[^>]*?>)#',"$1$2",$content);
+        $content = preg_replace('#(<\w+>)\s*(</\w+>)#',"",$content);
+        $content = preg_replace('#"[^"]*?field-*name-(body|field-date)[^"]*?"#','"$1"',$content);
+        $content = preg_replace('#"[^"]*?node--type-(\w+)[^"]*?"#','"$1"',$content);
+        file_put_contents($fileDir . '/' . $file_name, $content);
+        usleep(20);
+      }
+    }
+  }
+}
+
+function jsonstyles_metatags_from_entity($node, $alias = '') {
+  $data['site_name'] = \Drupal::config('system.site')->get('name');
+  $slogan = \Drupal::config('system.site')->get('slogan');
+  if (!empty($slogan)) {
+    $data['site_name'] .= ': ' . $slogan;
+  }
+  if ($alias == '/about') {
+    $file_name = 'default.title';
+    jsonstyles_write_snippet($file_name, $data['site_name']);
+  }
+  $data['title'] = $node->getTitle();
+  $data['url'] = jsonstyles_build_url($node, $alias);
+  $bv = $node->get('body');
+  if ($bv instanceof \Drupal\Core\Field\FieldItemList  && $bv->count() > 0 ) {
+    $body = $bv->first()->getValue();
+    if (isset($body['value'])) {
+      $bodyVal = Unicode::truncate(strip_tags($body['value']), 250, true);
+      if (is_string($bodyVal)) {
+        $data['description'] = $bodyVal;
+      }
+    }
+  }
+  $imgs = null;
+  if (isset($node->field_images)) {
+    $imgs = $node->get('field_images');
+  } else if (isset($node->field_image)) {
+    $imgs = $node->get('field_image');
+  }
+  if (is_object($imgs)) {
+    if ($imgs->count() > 0) {
+      $img = $imgs->first()->getValue();
+      if (isset($img['target_id']) && is_numeric($img['target_id'])) {
+        $file = File::load($img['target_id']);
+        if (is_object($file)) {
+          $data['image'] = ImageStyle::load('large')->buildUrl($file->getFileUri());
+        }
+      }
+      
+    }
+  }
+  $date = null;
+  if (isset($node->field_date)) {
+    $date = $node->get('field_date');
+    if ($date->count() > 0) {
+      $date = $date->first()->getValue();
+    }
+  } else {
+    $date = $node->created->first()->getValue();
+  }
+  if (is_array($date) && isset($date['value'])) {
+    if (is_numeric($date['value'])) {
+      $ts = (int) $date['value'];
+      if ($ts > 0) {
+        $data['date'] = date("Y-m-f\TH:i:s", $ts);
+      }
+    } else {
+      $data['date'] = $date['value'];
+    }
+  }
+
+  $user = $node->getRevisionUser();
+  if (is_object($user)) {
+    $data['creator'] = $user->getUsername();
+  }
+
+  $html = jsonstyles_twitter_cards($data);
+
+  $html .= jsonstyles_ogtags($data);
+  $html .= jsonstyles_dcterms($data);
+  return $html;
+}
+
+function jsonstyles_build_url($node, $alias = '') {
+   $url = 'http';
+   if (isset($_SERVER['REQUEST_SCHEME'])) {
+    $url = $_SERVER['REQUEST_SCHEME'];
+   }
+   $url .= '://';
+   if (isset($_SERVER['HTTP_HOST'])) {
+    $url = $_SERVER['HTTP_HOST'];
+   }
+   return $url . $alias;
+}
+
+function jsonstyles_twitter_cards(array $data) {
+  $html = jsonstyles_metatag('twitter.card','summary','name');
+  
+  foreach ($data as $key => $value) {
+    switch ($key) {
+      case 'title':
+      case 'url':
+      case 'description':
+      case 'image':
+        $html .= jsonstyles_metatag('twitter.'. $key,$value,'name');
+        break;
+    }
+  }
+  return $html;
+}
+
+function jsonstyles_ogtags(array $data) {
+  $html = jsonstyles_metatag('og.type','article');
+
+  foreach ($data as $key => $value) {
+    switch ($key) {
+      case 'title':
+      case 'url':
+      case 'description':
+      case 'site_name':
+        $k = $key;
+        break;
+      case 'date':
+        $k = 'updated_time';
+      default:
+        $k = null;
+        break;
+    }
+    if (!empty($k) && is_string($k)) {
+      $html .= jsonstyles_metatag('og.'. $k, $value);
+    }
+  }
+
+  return $html;
+}
+
+function jsonstyles_dcterms(array $data) {
+  $html = jsonstyles_metatag('dcterms.type','Text','name');
+  $html .= jsonstyles_metatag('dcterms.format','text/html','name');
+  foreach ($data as $key => $value) {
+    switch ($key) {
+      case 'title':
+      case 'description':
+      case 'site_name':
+      case 'date':
+        $k = $key;
+        break;
+      case 'url':
+        $k = 'identifier';
+      default:
+        $k = null;
+        break;
+    }
+    if (!empty($k)) {
+      $html .= jsonstyles_metatag('dcterms.'. $k,$value,'name');
+    }
+  }
+  return $html;
+}
+
+function jsonstyles_metatag($property, $value, $nameKey = 'property') {
+  if (is_string($value) && is_string($property)) {
+    return '<meta '.$nameKey.'="'.$property.'" content="'.$value.'" />';
+  }
+}
+
+function _jsonstyle_add_response_styles_to_images($section, $value, $obj, $field_name = '', array $styles = array()) {
+  $obj->{$field_name} = array();
+  if (!empty($value) && !empty($field_name) && is_object($obj)) {
+    $single_mode = $field_name == 'image';
+    $obj->{$field_name} = array();
+     $images = jsonstyles_process_compact_image_field($value, $styles);
+
+    if (!empty($images)) {
+      $img_size_fn = 'field_' . $field_name.'_1';
+      $attrs = jsonstyles_add_image_size_attributes($section,$img_size_fn);
+      $img_alt_fn = 'field_' . $field_name.'_2';
+      $alt_texts = array();
+      if (isset($section->{$img_alt_fn}) && is_string($section->{$img_alt_fn})) {
+        $alt_texts = explode('#', $section->{$img_alt_fn});
+      }
+      if (is_array($attrs) && array_key_exists(0, $attrs)) {
+        foreach ($attrs as $si => $props) {
+          $images[$si]['attributes'] = $props;
+          if (array_key_exists($si, $alt_texts)) {
+            $images[$si]['attributes']['alt'] = trim($alt_texts[$si]);
+          }
+        }
+      }
+      if ($single_mode) {
+        $obj->{$field_name} = $images[0];
+      } else {
+        $obj->{$field_name} = $images;
+      }        
+    }
+  }
+}
+
+function jsonstyles_add_styles($view,&$output) {
+	$styles = jsonstyles_fetch_stylers();
+  $data = json_decode($output['#markup']);
+  if (!empty($data)) {
+  	foreach ($data as $index => &$row) {
+  		
+  		if (is_object($row)) {
+  			foreach ($row as $fn => &$items) {
+
+  				if (!empty($items)) {
+  					switch ($fn) {
+    					case 'field_images':
+                switch ($view->current_display) {
+                  case 'rest_export_1':
+                    jsonstyles_process_structured_image_field($items,$styles);
+                    $data[$index]->img_srcs = array();
+                    break;
+                  case 'rest_export_2':
+                    $images = jsonstyles_process_compact_image_field($items,$styles);
+                    $fn1 = $fn.'_1';
+                    $attrs = array();
+
+                    if (isset($row->{$fn1})) {
+                      $attrs = jsonstyles_add_image_size_attributes($row, $fn1);
+                    }
+                    foreach ($images as $subIndex => $img) {
+                       $obj = new StdClass;
+                      foreach ($img as $k2 => $v2) {
+                        $obj->{$k2} = '#';
+                      }
+                      if (isset($attrs[$subIndex])) {
+                        $images[$subIndex]['attributes'] = $attrs[$subIndex];
+                      }
+                    }
+                    $data[$index]->{$fn} = $images;
+                    break;
+                }
+    						break;
+    				}
+  				}
+  			}
+  		}
+  	}
+  	$response = new JsonResponse($data);
+    $response->send();
+    exit;
+  }
+}
+
+function jsonstyles_add_image_size_attributes($row, $field_name) {
+  $parts = explode(',',$row->{$field_name});
+  $sizes = array();
+  $str = '';
+  $index = 0;
+  foreach ($parts as $str) {
+    if (preg_match('#^\s*\d+x\d+#', $str)) {
+      $sizes[$index] = trim($str);
+      $lastIndex = $index;
+      $index++;
+    } else if (is_string($str) && strlen($str) > 1) {
+      $sizes[$lastIndex] .= ','.$str;
+    }
+  }
+  $attrs = array();
+  foreach ($sizes as $size) {
+    $size = trim($size);
+    $parts = explode('#',$size);
+    $title = '';
+    if (count($parts) > 1) {
+      $size = array_shift($parts);
+      $title = implode('#', $parts);
+    }
+    $parts = explode('x', $size);
+    
+    if (count($parts) > 1 && is_numeric($parts[1])) {
+      $attrs[] = array(
+        'width' => (int) $parts[0],
+        'height' => (int) $parts[1],
+        'title' => $title
+      );
+    }
+  }
+  return $attrs;
+}
+
+function jsonstyles_process_compact_image_field($field,$styles) {
+  $images = array();
+  if (is_string($field)) {
+    $uris = explode(',',$field);
+    foreach ($uris as $uri) {
+      $uri = trim($uri);
+      $image_set = array();
+      $parts = explode('/files/',$uri);
+      $type = 'image/jpeg';
+      $picMode = true;
+      if (count($parts)>1) {
+        $ps = explode('.', $parts[1]);
+        $ext = array_pop($ps);
+        $ext = strtolower($ext);
+        switch ($ext) {
+          case 'jpg';
+          case 'jpeg';
+            break;
+          case 'gif':
+          case 'png':
+          case 'svg':
+            $type = 'image/' . $ext;
+            $picMode = false;
+            break;
+          default:
+            $type = 'other';
+            $picMode = false;
+            break;
+        }
+        if ($picMode) {
+          foreach ($styles as $key => $style) {
+            $uri = $style->buildUrl($parts[1]);
+            $image_set[$key] = _jsonstyles_clean_uri($uri);
+          }
+        } else {
+          $image_set['orig'] = file_create_url($uri);
+        }
+      }
+      if ($type != 'other') {
+        $images[] = array('sizes' => $image_set,'type' => $type,'picture' => $picMode);
+      }
+    }
+  }
+  return $images;
+}
+
+function _jsonstyles_clean_uri($uri = "") {
+  return preg_replace('#^'.Drupal::request()->getSchemeAndHttpHost().'#','',$uri);
+}
+
+function _jsonstyles_add_media_embed($section, $value, $obj, $fn) {
+  if (!empty($value) && is_string($value)) {
+    $data = array();
+    switch ($fn) {
+      case 'video':
+        $attrs = jsonstyles_parse_tag($value, 'iframe');
+
+        if (is_array($attrs)) {
+          $obj->has_media = true;
+          foreach ($attrs as $key => $val) {
+            switch ($key) {
+              case 'src':
+                $data['uri'] = $val;
+                break;
+              case 'width':
+              case 'height':
+                $data[$key] = $val;
+                break;
+            }
+          }
+        }
+        $data['type'] = 'embed';
+         $thumb_fn = 'field_preview';
+        if (isset($section->{$thumb_fn}) && !empty($section->{$thumb_fn})) {
+          $data['preview'] = $section->{$thumb_fn};
+        } else {
+          $thumb_fn = 'field_' . $fn .'_1';
+          if (isset($section->{$thumb_fn})) {
+            $attrs = jsonstyles_parse_tag($section->{$thumb_fn}, 'img');
+            $data['preview'] = Drupal::request()->getSchemeAndHttpHost() . $attrs['src'];
+          }
+        }
+        break;
+      case 'media':
+        $data['type'] = 'local';
+        $parts = explode(',',$value);
+
+        $uris = array();
+        foreach ($parts as $index => $part) {
+          if (strlen($part) > 1) {
+            $part = trim($part);
+            $ps = explode('.', $part);
+            $ext = array_pop($ps);
+            $ext = preg_replace('#\?.*?$#', '', strtolower($ext));
+
+            switch ($ext) {
+              case 'mov':
+              case 'avi':
+              case 'mp4':
+              case 'webm':
+              case 'mpeg':
+                $data['type'] = 'video';
+                $mimetype = 'video/' . $ext;
+                break;
+              case 'mp3':
+              case 'ogg':
+                $data['type'] = 'audio';
+                $mimetype = 'audio/' . $ext;
+                break;
+            }
+            if ($data['type'] != 'local') {
+              $uris[] =  array(
+                'src' => Drupal::request()->getSchemeAndHttpHost() . trim($part),
+                'mimetype' => $mimetype
+              );
+              if (!$obj->has_media) {
+                $obj->has_media = true;
+              }
+            }
+          }
+          
+        }
+        $data['uris'] = $uris;
+        $thumb_fn = 'field_preview';
+        if (isset($section->{$thumb_fn})) {
+          $data['preview'] = Drupal::request()->getSchemeAndHttpHost() . $section->{$thumb_fn};
+        }
+        break;
+    }
+    $data['has_preview'] = isset($data['preview']) && strlen($data['preview']) > 5;
+    $obj->media = $data;
+  }
+}
+
+function jsonstyles_parse_tag($string = '', $tag_name = 'div') {
+  $data = array();
+  preg_match_all('#<(\w+)\b\s*([^>]*?)?/?>#i',$string,$matches);
+  if (count($matches) > 0 && isset($matches[1]) && is_array($matches[1])) {
+    $tag_name = strtolower($tag_name);
+    foreach ($matches[1] as $index => $matched_tag) {
+      $matched_tag = strtolower($matched_tag);
+      switch ($matched_tag) {
+        case $tag_name:
+          $data['tagName'] = $tag_name;
+          preg_match_all('#([a-z0-9_-]+)(="([^"]+?)")?#',$matches[2][$index], $attrs_ms);
+          if (isset($attrs_ms[1]) && is_array($attrs_ms[1])) {
+            foreach ($attrs_ms[1] as $index => $val) {
+              if (isset($attrs_ms[3][$index])) {
+                $data[$val] = $attrs_ms[3][$index];
+              } else {
+                $data[$val] = true;
+              }
+            }
+          }
+          break;
+      }
+    }
+  }
+  return $data;
+}
+
+function jsonstyles_process_structured_image_field(&$items, &$styles) {
+  foreach ($items as $index => &$obj) {
+    if ($obj->url) {
+      $parts = explode('/files/',$obj->url);
+      if (count($parts)>1) {
+        foreach ($styles as $key => $style) {
+
+          $obj->{$k} = $style->buildUrl($parts[1]);
+        }
+      }
+    }
+  }
+}
+
+function jsonstyles_fetch_stylers($type = 'wide') {
+
+	$respStyle = ResponsiveImageStyle::load($type);
+
+	$styles = array();
+	$mappings = $respStyle->getImageStyleMappings();
+	if (!empty($mappings)) {
+		if (array_key_exists(0, $mappings)) {
+			
+			if (isset($mappings[0]['image_mapping'])) {
+				$sizes = $mappings[0]['image_mapping']['sizes_image_styles'];
+				foreach ($sizes as $size) {
+					$styles[$size] = ImageStyle::load($size);
+				}
+			}
+		}
+	}
+	return $styles;
+}

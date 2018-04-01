@@ -1,0 +1,491 @@
+// [TJW - refactor] TODO
+
+@import 'variables';
+
+/* stylelint-disable plugin/no-browser-hacks */
+$paragraph-preview-height: 90px;
+$paragraph-preview-thumbnail-height: 90px;
+$paragraph-preview-thumbnail-width: 150px;
+
+$paragraph-preview-mobile-height: 150px;
+$paragraph-preview-thumbnail-mobile-height: 75px;
+$paragraph-preview-thumbnail-mobile-width: 125px;
+/* stylelint-enable plugin/no-browser-hacks */
+
+.field--widget-entity-reference-paragraphs {
+  .paragraph-type-add-modal {
+    padding: 5px 0;
+    height: 30px;
+
+    @media screen and (max-width: 600px) {
+      height: 39px;
+    }
+
+    .paragraph-type-add-modal-button {
+      top: 0;
+
+      @media screen and (max-width: 600px) {
+        width: auto;
+        padding-top: 6px;
+      }
+    }
+  }
+}
+
+/**
+ * Paragraph multi reference field item's draggable row:
+ * 1. separate paragraph "items" visually and make room for [add] buttons
+ */
+.field-multiple-table {
+  & > thead {
+    tr {
+      border-bottom: 1px solid $primary-color;
+    }
+    th {
+      border: 0;
+      background: transparent;
+    }
+    .field-label {
+      padding-left: 0;
+    }
+  }
+
+  & > tbody > tr {
+    background: $primary-color-lighter;
+    border-bottom: 1px solid $primary-color;
+
+    &.draggable {
+      &:hover {
+        background: $primary-color-lighter;
+      }
+
+      > .field-multiple-drag {
+        position: relative;
+        width: 58px;
+        vertical-align: middle;
+        text-align: center;
+        box-sizing: border-box;
+
+        .js & {
+          .tabledrag-changed {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 5px;
+            height: 100%;
+            font-size: 0;
+            background: #e09600;
+          }
+
+          .tabledrag-handle {
+            display: inline-block;
+            float: none;
+
+            .handle {
+              margin-left: 5px;
+              background: url(../images/icons/move.svg) no-repeat center center;
+
+              @include for-tablet-portrait-and-up {
+                margin-left: 2px;
+              }
+            }
+          }
+        }
+      }
+
+      &.drag {
+        background: $primary-color-lighter-2;
+
+        .field-multiple-drag {
+          .tabledrag-handle {
+            .handle {
+              background-image: url(../images/icons/move--primary-blue.svg);
+            }
+          }
+        }
+      }
+
+      &:last-of-type {
+        border-bottom: none;
+      }
+
+    }
+  }
+
+  /**
+   * Adjust style for add-in-between button for paragraphs.
+   */
+  .add-in-between-row {
+    background: transparent;
+  }
+
+  &.field-multiple-table--paragraphs--row-based-add-in-between {
+    & > thead,
+    & > tbody {
+      & > tr {
+        border-bottom-width: 0;
+      }
+    }
+  }
+}
+
+.paragraph-form-item {
+  position: relative;
+}
+
+.paragraph-form-item__actions {
+  @include for-tablet-portrait-and-up {
+    min-width: 160px;
+  }
+}
+
+.paragraph-form-item--has-preview {
+  display: flex;
+  flex-wrap: wrap;
+
+  .messages {
+    flex: 1 1 100%;
+  }
+
+  .paragraph-form-item__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    float: right;
+    margin-left: 1em;
+    flex-grow: 1;
+
+    max-height: $paragraph-preview-height;
+    height: $paragraph-preview-height;
+
+    .paragraph-type-title {
+      display: none;
+
+      @include for-tablet-portrait-and-up {
+        display: flex;
+        height: 100%;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+    }
+
+    .paragraph-form-item__links {
+      margin: 0;
+      padding: 0;
+      list-style-type: none;
+      border-left: 1px solid #ccc;
+
+      li {
+        button {
+          max-height: 40px;
+        }
+
+        + li {
+          margin-top: 5px;
+
+          &:before {
+            display: block;
+            content: '';
+            margin: 0 1.3rem 0.3rem;
+            border-top: 1px solid #ccc;
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Editing mode for a paragraph item:
+ * 1. bleed the background into the padding on the table row.
+ */
+.paragraph-form-item--has-subform {
+  display: flex;
+  flex-direction: column;
+  margin-top: -10px;  /* 1 */
+  margin-bottom: -10px;  /* 1 */
+  margin-left: 0;
+  padding: 20px 20px 20px 0;
+  color: $gray-medium;
+
+  // Different colors, for better contrast
+  a, .link {
+    color: $primary-color;
+  }
+
+  .paragraph-form-item__actions {
+    margin-top: 1em;
+    display: flex;
+    justify-content: flex-end;
+    order: 10;
+    margin-right: 24px;
+
+    .paragraph-type-title {
+      display: none;
+    }
+
+    .paragraph-form-item__links {
+      display: flex;
+      margin: 0;
+      padding: 0;
+      list-style-type: none;
+
+      // @TODO: Remove rule when remove icon has been removed from form.
+      .remove {
+        display: none;
+      }
+
+      .confirm-remove {
+        margin-right: $base-space;
+      }
+    }
+  }
+
+  .form-item__toggle-description-placeholder {
+    display: inherit;
+    width: 24px;
+    height: 24px;
+  }
+
+  > .form-wrapper:first-child {
+    margin-top: $base-space-80pct;
+  }
+
+  .filter-wrapper {
+    border: 0;
+    padding-left: 0;
+    padding-right: 0;
+    margin-right: 24px;
+  }
+
+  .form-text,
+  .form-url {
+    width: 100%;
+  }
+
+  .column-container {
+    @include for-big-tablet-landscape-and-up {
+      display: flex;
+      justify-content: space-between;
+
+      > .left,
+      > .right {
+        width: 48%;
+      }
+    }
+  }
+
+  .entities-list {
+    .item-container {
+      margin: $base-space-80pct $base-space-80pct $base-space-80pct * 1.5;
+    }
+  }
+
+  .bottom {
+    margin-top: 2em;
+  }
+
+  .form-managed-file .file {
+    margin-top: 1.5em;
+  }
+
+  .field--name-field-text .form-type-textarea,
+  .field--name-field-url .form-type-url {
+    label {
+      margin-bottom: 0.8em;
+      color: $gray-medium;
+      font-size: 14px;
+      line-height: 17px;
+    }
+  }
+
+  .paragraphs-subform >.field--widget-entity-browser-entity-reference {
+    details {
+      margin: 0;
+      border: 0;
+
+      summary {
+        display: none;
+      }
+
+      .details-wrapper {
+        padding: 0;
+      }
+    }
+
+    .entities-list {
+      .item-container {
+        display: block;
+        margin: 0;
+
+        &:hover {
+          cursor: default;
+          opacity: 1;
+        }
+      }
+    }
+  }
+
+  .field--widget-inline-entity-form-simple {
+    fieldset {
+      padding: 0;
+      border: 0;
+    }
+  }
+
+  .field--name-field-media {
+    legend {
+      display: none;
+    }
+  }
+
+  .field-multiple-table {
+    tbody {
+      tr {
+        border-bottom-color: $primary-color-dark;
+
+        &.draggable,
+        &.drag-previous {
+          background: transparent;
+        }
+      }
+    }
+
+    thead {
+      tr {
+        border: 0;
+
+        &:hover {
+          background: transparent;
+        }
+
+        th {
+          background: transparent;
+          color: $gray-medium;
+          border: 0;
+        }
+      }
+    }
+
+  }
+  fieldset:not(.fieldgroup) {
+    padding: 30px 0 0;
+    border: 0;
+    legend {
+      margin: 0.3em;
+    }
+  }
+}
+
+/* ----------------------- Paragraph preview -------------------------------- */
+
+.paragraph-form-item__preview {
+  flex: 1 1 60%;
+  max-height: $paragraph-preview-mobile-height;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.3em;
+
+  .text-formatted {
+    & * {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.3em;
+    }
+
+    ul {
+      padding-left: 1.4em;
+    }
+  }
+
+  .field__label {
+    display: none;
+
+    @include for-tablet-portrait-and-up {
+      display: block;
+    }
+  }
+
+  @include for-tablet-portrait-and-up {
+    height: $paragraph-preview-height;
+    max-height: $paragraph-preview-height;
+  }
+
+  &.clickable {
+    cursor: pointer;
+  }
+}
+
+
+.paragraph-preview {
+  @include for-tablet-portrait-and-up {
+    display: flex;
+  }
+}
+.paragraph-preview__thumbnail {
+  margin-right: 1em;
+  width: $paragraph-preview-thumbnail-mobile-width;
+  height: $paragraph-preview-thumbnail-mobile-height;
+  border: 1px solid white;
+  overflow: hidden;
+
+  @include for-tablet-portrait-and-up {
+    width: $paragraph-preview-thumbnail-width;
+    height: $paragraph-preview-thumbnail-height;
+  }
+
+  img {
+    height: $paragraph-preview-thumbnail-mobile-height;
+    width: auto;
+
+    @include for-tablet-portrait-and-up {
+      height: $paragraph-preview-thumbnail-height;
+    }
+  }
+
+  .thumbnail-quadruple {
+    display: flex;
+    flex-wrap: wrap;
+    background: $gray-lightest;
+    justify-content: space-between;
+    max-height: 100%;
+
+    .thumbnail-quadruple__item {
+      flex: 0 0 74px;
+      max-width: 74px;
+      height: 44px;
+      max-height: 44px;
+      border: 1px solid white;
+      overflow: hidden;
+
+      img {
+        display: block;
+        width: 100%;
+        height: 100%;
+
+      }
+    }
+  }
+
+}
+.paragraph-preview__data {
+  flex: 1 1 auto;
+}
+
+/* -------------------------- Interaction ----------------------------------- */
+
+.paragraph-form-item .ajax-progress {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  display: flex;
+  background: transparent;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}

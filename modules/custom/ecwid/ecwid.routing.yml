@@ -1,0 +1,22 @@
+ecwid.products:
+  path: '/ecwid/products'
+  defaults:
+    _controller: '\Drupal\ecwid\Controller\EcwidController::products'
+  requirements:
+    _access: 'TRUE'
+
+admin.content.ecwid:
+  path: '/admin/content/ecwid'
+  defaults:
+    _form: '\Drupal\ecwid\Controller\EcwidController::listProducts'
+    _title: 'Ecwid API Details'
+  requirements:
+    _permission: 'administer site configuration'
+
+admin.config.services.ecwid:
+  path: '/admin/config/services/ecwid'
+  defaults:
+    _form: '\Drupal\ecwid\Form\EcwidSettingsForm'
+    _title: 'Ecwid API Details'
+  requirements:
+    _permission: 'administer site configuration'
