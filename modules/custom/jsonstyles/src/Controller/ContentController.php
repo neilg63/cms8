@@ -36,6 +36,7 @@ class ContentController extends ControllerBase {
     'field_image' => ['multiple' => false, 'type' => 'image'],
     'field_ecwid' => ['multiple' => false, 'type' => 'string'],
     'field_category' => ['multiple' => false, 'type' => 'term'],
+    'field_ecwid' => ['multiple' => true, 'type' => 'string'],
     'field_layout' => ['multiple' => false, 'type' => 'string'],
     'field_tags' => ['multiple' => true, 'type' => 'term'],
     'field_weight' => ['multiple' => false, 'type' => 'int'],
