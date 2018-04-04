@@ -24,6 +24,8 @@ class ContentController extends ControllerBase {
 
   protected $styles = array();
 
+  protected $langCode = 'en';
+
   protected $settings;
 
   protected $nodeFields = [
@@ -36,6 +38,8 @@ class ContentController extends ControllerBase {
     'field_image' => ['multiple' => false, 'type' => 'image'],
     'field_ecwid' => ['multiple' => false, 'type' => 'string'],
     'field_category' => ['multiple' => false, 'type' => 'term'],
+    'field_ecwid' => ['multiple' => true, 'type' => 'string'],
+    'field_layout' => ['multiple' => false, 'type' => 'string'],
     'field_tags' => ['multiple' => true, 'type' => 'term'],
     'field_weight' => ['multiple' => false, 'type' => 'int'],
     'changed' => ['multiple' => false, 'type' => 'int']
@@ -48,12 +52,19 @@ class ContentController extends ControllerBase {
     'field_image' => ['multiple' => false, 'type' => 'image'],
     'field_media' => ['multiple' => false, 'type' => 'media'],
     'field_video' => ['multiple' => false, 'type' => 'media'],
-    'field_link' => ['multiple' => false, 'type' => 'link'],
+    'field_link' => ['multiple' => true, 'type' => 'link'],
+    'field_layout' => ['multiple' => false, 'type' => 'string'],
   ];
 
   public function __construct() {
     $this->styles = jsonstyles_fetch_stylers();
     $this->settings = \Drupal::config('jsonstyles.settings');
+    if (array_key_exists('lang', $_GET)) {
+      $lc = trim($_GET['lang']);
+      if (is_string($lc) && strlen($lc) > 1) {
+        $this->langCode = $lc;
+      }
+    }
   }
 
   function home() {
@@ -88,6 +99,34 @@ class ContentController extends ControllerBase {
     $perPage = (int) $this->getSetting('products_per_page', 12);
     $max = $perPage * 5;
     $this->products($perPage, $max);
+  }
+
+  function pagePath($path = "") {
+    $path = '/' . str_replace('__','/', $path);
+    $source = \Drupal::service('path.alias_manager')->getPathByAlias($path);
+    $data = new \StdClass;
+    $data->source = $source;
+    $data->path = $path;
+    $data->valid = false;
+    $parts = explode('/', $source);
+    if (count($parts) > 1) {
+      $nid = array_pop($parts);
+      if (is_numeric($nid)) {
+        $nid = (int) $nid;
+        $type = array_pop($parts);
+        if ($nid > 0 && $type == 'node') {
+          $node = node_load($nid);
+          $data->valid = is_object($node); 
+        }
+      }
+    }
+    if ($data->valid) {
+      $this->nodeJson($node);
+    } else {
+      $response = new JsonResponse($data);
+      $response->send();
+      exit;
+    }
   }
 
   function nodeFull($node) {
@@ -157,6 +196,9 @@ class ContentController extends ControllerBase {
     $data = array();
     $index = 0;
     foreach ($nodes as $nid => $node) {
+      if ($this->langCode != 'en') {
+        $node = $node->getTranslation($this->langCode);
+      }
       $item = $this->parseFields($node, $this->nodeFields);
       if (is_object($item)) {
         $item->path = \Drupal::service('path.alias_manager')->getAliasByPath('/node/' . $item->nid);
@@ -192,7 +234,7 @@ class ContentController extends ControllerBase {
     foreach ($fieldNames as $fieldName => $info) {
       $vals = null;
       if ($entity->hasField($fieldName)) {
-        $vals = $entity->get($fieldName)->getValue();
+        $vals = $entity->get($fieldName,'it')->getValue();
       }
       $isField = strpos($fieldName, 'field_') == 0;
       $multiple = false;
@@ -265,6 +307,9 @@ class ContentController extends ControllerBase {
   }
 
   protected function nodeJson($node) {
+    if ($this->langCode !== 'en') {
+      $node = $node->getTranslation($this->langCode);
+    }
     $data = $this->nodeData($node);
     $response = new JsonResponse($data);
     $response->send();

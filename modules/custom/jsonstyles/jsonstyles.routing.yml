@@ -80,6 +80,17 @@ jsonstyles.nodeFull.nid:
       node:
         type: entity:node
 
+jsonstyles.pagePath.path:
+  path: '/jsonstyles/page-path/{path}'
+  defaults:
+    _controller: '\Drupal\jsonstyles\Controller\ContentController::pagePath'
+  requirements:
+    _access: 'TRUE'
+  options:
+    parameters:
+      path:
+        type: String
+
 admin.content.writeSnippets:
   path: '/admin/content/write-snippets'
   defaults:

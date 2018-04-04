@@ -1,3 +1,10 @@
 files
+<<<<<<< HEAD
 files/*
 sites/default
+=======
+sites/default
+sites/default/
+sites/default/*
+node_modules
+>>>>>>> 253f50e72c634a05b9ba6632cd9f6fa21bf42cf0
