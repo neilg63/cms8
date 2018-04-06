@@ -38,6 +38,7 @@ class ContentController extends ControllerBase {
     'field_image' => ['multiple' => false, 'type' => 'image'],
     'field_ecwid' => ['multiple' => false, 'type' => 'string'],
     'field_category' => ['multiple' => false, 'type' => 'term'],
+    'field_alignment' => ['multiple' => false, 'type' => 'split', 'split' => '|'],
     'field_ecwid' => ['multiple' => true, 'type' => 'string'],
     'field_layout' => ['multiple' => false, 'type' => 'string'],
     'field_tags' => ['multiple' => true, 'type' => 'term'],
@@ -253,6 +254,19 @@ class ContentController extends ControllerBase {
         $item->{$key} = $this->parseValues($values, $info);
       }
     }
+    if (isset($item->alignment) && !empty($item->alignment) && !empty($item->images)) {
+       if (is_array($item->images) && is_array($item->alignment)) {
+         foreach ($item->images as $index => $image) {
+           if (array_key_exists($index, $item->alignment)) {
+             $align = $item->alignment[$index];
+           } else {
+             $align = 'center';
+           } 
+           $item->images[$index]['align'] = $align; 
+         }
+       }
+       unset($item->alignment);	
+    }
     $item->type = $entity->bundle();
     return $item;
   }
@@ -289,6 +303,12 @@ class ContentController extends ControllerBase {
           break;
         case 'bool':
           $out[] = (bool) $val;
+          break;
+        case 'split':
+          if (is_string($val)) {
+            $separator = isset($info['split']) ? $info['split'] : '|';
+            $out[] = explode($separator,$val);
+          }
           break;
         default:
           $out[] = $val;
@@ -333,11 +353,13 @@ class ContentController extends ControllerBase {
 
   private function simplifyValue(array $vals, $type = null) {
     $items = array();
+    $mayReturnEmpty = false;
     if (count($vals) > 0 && is_array($vals[0])) {
       switch ($type) {
         case 'image':
         case 'file':
         case 'media':
+        case 'embed':
           $matchTarget = false;
           break;
         default:
@@ -347,12 +369,22 @@ class ContentController extends ControllerBase {
       foreach ($vals as $index => $val) {
         if (isset($val['value'])) {
           $row = $val['value'];
+          switch ($type) {
+            case 'bool':
+              $row = (bool) $row;
+              $mayReturnEmpty = true;
+              break;
+            case 'int':
+              $row = (int) $row;
+              $mayReturnEmpty = true;
+              break;
+          }
         } else if ($matchTarget && isset($val['target_id'])) {
           $row = (int) $val['target_id'];
         } else {
           $row = $val;
         }
-        if (!empty($row)) {
+        if (!empty($row) || $mayReturnEmpty) {
           $items[] = $row;
         }
       }
