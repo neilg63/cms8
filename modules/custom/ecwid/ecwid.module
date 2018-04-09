@@ -1,2 +1,77 @@
 <?php
 
+
+
+function ecwid_theme($existing, $type, $theme, $path) {
+  return [
+    'jsload' => [
+      'variables' => ['ecwid_id' => NULL, 'products' => array(), 'has_products' => false],
+    ],
+  ];
+}
+
+function ecwid_product_map() {
+  $products = ecwid_product_list();
+  $items = ['' => '---'];
+  foreach ($products as $product) {
+    $product = (object) $product;
+    $items[$product->id] = $product->title . ' ['.$product->price_formatted.']' . ' ('.$product->id.')';
+  }
+  return $items;
+}
+
+function ecwid_product_list() {
+  $settings      = \Drupal::config('ecwid.settings');
+  $products = $settings->get('products');
+  $products = ecwid_format_product_items($products);
+  if (empty($products) || !is_array($products)) {
+    $products = array();
+  }
+  return $products;
+}
+
+function ecwid_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  if (1 == 1 || isset($form['type'])) {
+    if (isset($form['field_ecwid'])) {
+      $products = ecwid_product_map();
+      if (is_array($form['field_ecwid'])) {
+        if (isset($form['field_ecwid']['widget']) && array_key_exists(0, $form['field_ecwid']['widget'])) {
+          $widgetItems =& $form['field_ecwid']['widget'];
+          foreach ($widgetItems as $index => &$field_data) {
+            if (is_numeric($index) && is_array($field_data['value']) && isset($field_data['value']['#type'])) {
+              $field_data['value']['#type'] = 'select';
+              $field_data['value']['#options'] = $products;
+              unset($field_data['value']['#size']);
+              $field_data['value']['#multiple'] = false;
+            }
+          }
+        }
+      }
+      
+    }
+  }
+}
+
+function ecwid_format_product_items(array $products = array()) {
+  foreach ($products as &$product) {
+    if (!isset($product['currency'])) {
+      $product['currency'] = 'EUR';
+    }
+    switch ($product['currency']) {
+      case 'EUR':
+        $currency = '€';
+        break;
+      case 'GPB':
+        $currency = '£';
+        break;
+      case 'USD':
+        $currency = '$';
+        break;
+      default;
+        $currency = $product['currency'] . ' ';
+        break;
+    }
+    $product['price_formatted'] = $currency . number_format($product['price'],2);
+  }
+  return $products;
+}

@@ -8,8 +8,16 @@ ecwid.products:
 admin.content.ecwid:
   path: '/admin/content/ecwid'
   defaults:
-    _form: '\Drupal\ecwid\Controller\EcwidController::listProducts'
+    _controller: '\Drupal\ecwid\Controller\EcwidController::listProducts'
     _title: 'Ecwid API Details'
+  requirements:
+    _permission: 'administer site configuration'
+
+admin.content.ecwid.save:
+  path: '/admin/content/ecwid/save'
+  defaults:
+    _controller: '\Drupal\ecwid\Controller\EcwidController::saveProducts'
+    _title: 'Save ecwid products'
   requirements:
     _permission: 'administer site configuration'
 

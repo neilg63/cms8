@@ -1,0 +1,23 @@
+{% if has_products %}
+<table class="saved-products">
+  <caption id="saved-message"></caption>
+<thead>
+  <tr>
+    <th>Title</th>
+    <th>ID</th>
+    <th>Price</th>
+  </tr>
+</thead>
+<tbody>
+{% for product in products %}
+  <tr>
+    <td>{{product.title}}</td>
+    <td class="id">{{product.id}}</td>
+    <td class="price right">{{product.price_formatted}}</td>
+  </tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+
+<div id="my-store-{{ecwid_id}}" class="ecwid-store"></div><div> <script type="text/javascript" src="https://app.ecwid.com/script.js?{{ecwid_id}}" charset="utf-8"></script><script type="text/javascript"> xProductBrowser("categoriesPerRow=3","views=grid(20,3) list(60) table(60)","categoryView=grid","searchView=list","id=my-store-{{ecwid_id}}");</script></div>
