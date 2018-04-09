@@ -10,6 +10,7 @@ use \Drupal\Core\Controller\ControllerBase;
 use \Drupal\views\Views;
 use \Symfony\Component\HttpFoundation\JsonResponse;
 use \Symfony\Component\HttpFoundation\RedirectResponse;
+use Drupal\Component\Serialization\Json;
 
 /**
  * Class SiteInfoController
@@ -97,7 +98,6 @@ class SiteInfoController extends ControllerBase {
 				$data['is_editor']    = in_array('administrator', $data['roles']) || $account->hasPermission('bypass node access');
 			}
 		}
-
 		$response = new JsonResponse($data);
 		$response->send();
 		exit;
@@ -145,23 +145,18 @@ class SiteInfoController extends ControllerBase {
 	}
 
 	function writeCoreData() {
+		$content = new ContentController();
+		
 		$strData = '';
-		$prefix  = 'http';
-		if ($_SERVER['SERVER_PORT'] == 443) {
-			$prefix .= 's';
-		}
-		$prefix .= '://';
-		$host = $prefix.$_SERVER['HTTP_HOST'];
-		$uri  = $host.'/jsonstyles/siteinfo';
-		$json = file_get_contents($uri);
+		$core = $this->siteData();
+		$json = Json::encode($core);
 		$strData .= "\n" . 'var $preload={};';
 		if (is_string($json)) {
 			$strData .= "\n".'$preload.site_info = '.$json.";\n";
 		}
 		$extraPreloadAliases = array();
-		$obj = json_decode($json);
-		if (isset($obj->nodes) && is_array($obj->nodes)) {
-			foreach ($obj->nodes as $nd) {
+		if (isset($core->nodes) && is_array($core->nodes)) {
+			foreach ($core->nodes as $nd) {
 				if (!preg_match('#^/(home|projects)#', $nd->alias) && strlen($nd->alias) > 2) {
 					$alias = 'node_full__' . $nd->nid;
 					$extraPreloadAliases[$alias] = '/jsonstyles/node-full/' . $nd->nid;
@@ -169,25 +164,26 @@ class SiteInfoController extends ControllerBase {
 			}
 		}
 		usleep(250);
-		$uri  = $host.'/jsonstyles/home';
-		$json = file_get_contents($uri);
-
+		$data = $content->homeNode();
+		$json = Json::encode($data);
 		if (is_string($json)) {
 			$strData .= "\n".'$preload.home_slides = '.$json.";\n";
 		}
 		usleep(250);
-		$uri  = $host.'/jsonstyles/projects-full';
-		$json = file_get_contents($uri);
+		$data  = $content->productsFullData();
+		$json = Json::encode($data);
 		if (is_string($json)) {
-			$strData .= "\n".'$preload.top_projects = '.$json.";\n";
+			$strData .= "\n".'$preload.products = '.$json.";\n";
 		}
 		if (!empty($extraPreloadAliases)) {
 			foreach ($extraPreloadAliases as $key => $path) {
-				$uri = $host . $path;
-				$json = file_get_contents($uri);
-				if (is_string($json)) {
-					$strData .= "\n".'$preload.'.$key.' = '.$json.";\n";
-					usleep(250);
+				$data = $content->nodeFullData($path);
+				if ($data->valid) {
+					$json = Json::encode($data);
+					if (is_string($json)) {
+						$strData .= "\n".'$preload.'.$key.' = '.$json.";\n";
+						usleep(250);
+					}
 				}
 			}
 		}
