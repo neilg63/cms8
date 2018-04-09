@@ -39,7 +39,7 @@ class EcwidSettingsForm extends ConfigFormBase {
 
 		$form['general']['store_id'] = [
 			'#default_value' => $config->get('store_id'),
-			'#description'   => $this->t('Use !year for a dynamic year'),
+			'#description'   => $this->t('required to synchronise products between Ecwid and Drupal'),
 			'#maxlength'     => 64,
 			'#placeholder'   => 'Store ID: 12345678',
 			'#required'      => TRUE,
@@ -55,11 +55,10 @@ class EcwidSettingsForm extends ConfigFormBase {
 	 * {@inheritdoc}
 	 */
 	public function submitForm(array &$form, FormStateInterface $form_state) {
-		$config = $this->config('ecwid.settings');
+		$config = \Drupal::service('config.factory')->getEditable('ecwid.settings');
 		$config
-			->set('copyright', $form_state->getValue('store_id'))
+			->set('store_id', $form_state->getValue('store_id'))
 			->save();
-
 		parent::submitForm($form, $form_state);
 	}
 

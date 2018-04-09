@@ -9,7 +9,7 @@ admin.content.ecwid:
   description: 'Display all ecwid products related to a shop with IDs'
   route_name: admin.content.ecwid
 admin.config.services.ecwid:
-  title: 'Configure Ecwid Store details'
-  parent: system.config.services
+  title: 'Ecwid Store details'
+  parent: system.admin_config_services
   description: 'Enter store ID for synchronisation with mapped entities'
   route_name: admin.config.services.ecwid
