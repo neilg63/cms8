@@ -38,7 +38,8 @@ class ContentController extends ControllerBase {
     'field_image' => ['multiple' => false, 'type' => 'image'],
     'field_ecwid' => ['multiple' => false, 'type' => 'string'],
     'field_category' => ['multiple' => false, 'type' => 'term'],
-    'field_alignment' => ['multiple' => false, 'type' => 'split', 'split' => '|'],
+    'field_styles' => ['multiple' => true, 'type' => 'string', 'merge' => 'images'],
+    'field_alignment' => ['multiple' => false, 'type' => 'split', 'split' => '|', 'merge' => 'images'],
     'field_ecwid' => ['multiple' => true, 'type' => 'string'],
     'field_layout' => ['multiple' => false, 'type' => 'string'],
     'field_tags' => ['multiple' => true, 'type' => 'term'],
@@ -251,19 +252,8 @@ class ContentController extends ControllerBase {
         $item->{$key} = $this->parseValues($values, $info);
       }
     }
-    if (isset($item->alignment) && !empty($item->alignment) && !empty($item->images)) {
-       if (is_array($item->images) && is_array($item->alignment)) {
-         foreach ($item->images as $index => $image) {
-           if (array_key_exists($index, $item->alignment)) {
-             $align = $item->alignment[$index];
-           } else {
-             $align = 'center';
-           } 
-           $item->images[$index]['align'] = $align; 
-         }
-       }
-       unset($item->alignment);	
-    }
+    $this->mergeWithImages($item, 'alignment', 'center');
+    $this->mergeWithImages($item, 'styles', '');
     $item->type = $entity->bundle();
     return $item;
   }
@@ -318,6 +308,23 @@ class ContentController extends ControllerBase {
       return $out[0];
     }
   }
+
+  private function mergeWithImages($item, $sourceName = '', $default = '') {
+    if (isset($item->{$sourceName}) && !empty($item->{$sourceName}) && !empty($item->images)) {
+       if (is_array($item->images) && is_array($item->{$sourceName})) {
+         foreach ($item->images as $index => $image) {
+           if (array_key_exists($index, $item->{$sourceName})) {
+             $val = $item->{$sourceName}[$index];
+           } else {
+             $val = $default;
+           }
+           $item->images[$index][$sourceName] = $val;
+         }
+       }
+       unset($item->{$sourceName});
+    }
+  }
+
 
   function productFull($node) {
     $this->nodeJson($node);
