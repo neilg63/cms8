@@ -122,16 +122,15 @@ class ContentController extends ControllerBase {
       }
     }
     if ($data->valid) {
-      $this->nodeJson($node);
+      return $this->nodeJson($node);
     } else {
       $response = new JsonResponse($data);
-      $response->send();
-      exit;
+      return $response->send();
     }
   }
 
   function nodeFull($node) {
-    $this->nodeJson($node);
+    return $this->nodeJson($node);
   }
 
   protected function products($start = 0, $perPage = 12) {
@@ -145,8 +144,7 @@ class ContentController extends ControllerBase {
     $data->items = $items;
 
     $response = new JsonResponse($data);
-    $response->send();
-    exit;
+    return $response->send();
   }
 
   protected function blogListing($start = 0, $perPage = 12) {
@@ -160,8 +158,7 @@ class ContentController extends ControllerBase {
     $data->items = $items;
 
     $response = new JsonResponse($data);
-    $response->send();
-    exit;
+    return $response->send();
   }
 
   protected function getProducts($start = 0, $perPage = 12) {

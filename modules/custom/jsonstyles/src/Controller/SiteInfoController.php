@@ -38,6 +38,9 @@ class SiteInfoController extends ControllerBase {
 		$strapline           = count($parts) > 1?trim($parts[1]):'';
 		$data['strapline']   = $strapline;
 		$data['nodes']       = $this->allNodeAliasTitles();
+		if (function_exists('ecwid_product_list')) {
+			$data['ecwid_products'] = ecwid_product_list();
+		}
 		$response            = new JsonResponse($data);
 		$response->send();
 		exit;
