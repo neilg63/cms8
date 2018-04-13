@@ -261,8 +261,8 @@ class ContentController extends ControllerBase {
   protected function parseValues(array $vals = array(), array $info = array()) {
     $out = array();
     $index = 0;
+    $imgIds = array();
     foreach ($vals as $val) {
-
       switch ($info['type']) {
         case 'term':
           $val = (int) $val;
@@ -273,11 +273,15 @@ class ContentController extends ControllerBase {
           $section = $this->getSection($val, $index);
           if (!empty($section)) {
             $out[] = $section;
-            $index++; 
+            $index++;
           }
           break;
         case 'image':
-          $out[] = $this->processImage($val);
+          $img = $this->processImage($val);
+          if (!in_array($img['id'], $imgIds)) {
+            $out[] = $img;
+            $imgIds[] = $img['id'];
+          }
           break;
         case 'link':
           $out[] = $this->processLink($val);
@@ -418,6 +422,7 @@ class ContentController extends ControllerBase {
       $image = $this->processStyles($uri);
       unset($row['target_id']);
       $image['attributes'] = $row;
+      $image['id'] = $file->id();
     }
     return $image;
   }
