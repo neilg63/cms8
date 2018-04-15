@@ -36,6 +36,7 @@ class ContentController extends ControllerBase {
     'field_section' => ['multiple' => true, 'type' => 'paragraph'],
     'field_images' => ['multiple' => true, 'type' => 'image'],
     'field_image' => ['multiple' => false, 'type' => 'image'],
+    'field_svg' => ['multiple' => false, 'type' => 'image'],
     'field_ecwid' => ['multiple' => false, 'type' => 'string'],
     'field_category' => ['multiple' => false, 'type' => 'term'],
     'field_styles' => ['multiple' => true, 'type' => 'string', 'merge' => 'images'],
@@ -254,6 +255,10 @@ class ContentController extends ControllerBase {
     }
     $this->mergeWithImages($item, 'alignment', 'center');
     $this->mergeWithImages($item, 'styles', '');
+    if (empty($item->image) && !empty($item->svg) && is_array($item->svg)) {
+      $item->image = $item->svg;
+      unset($item->svg);
+    }
     $item->type = $entity->bundle();
     return $item;
   }
