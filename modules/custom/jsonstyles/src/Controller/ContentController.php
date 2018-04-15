@@ -35,6 +35,7 @@ class ContentController extends ControllerBase {
     'field_date'  => ['multiple' => false, 'type' => 'date'],
     'field_section' => ['multiple' => true, 'type' => 'paragraph'],
     'field_images' => ['multiple' => true, 'type' => 'image'],
+    'field_svgs' => ['multiple' => true, 'type' => 'image'],
     'field_image' => ['multiple' => false, 'type' => 'image'],
     'field_svg' => ['multiple' => false, 'type' => 'image'],
     'field_ecwid' => ['multiple' => false, 'type' => 'string'],
@@ -71,20 +72,7 @@ class ContentController extends ControllerBase {
   }
 
   function home() {
-    $result = $query = \Drupal::entityQuery('node')
-      ->condition('type','slide_show')
-      ->condition('status',1)
-      ->condition('promote',1)
-      ->range(0, 1)
-      ->execute();
-    $node = null;
-    if (!empty($result) && is_array($result)) {
-      $nid = (int) array_shift(array_values($result));
-      if ($nid > 0) {
-        $node = node_load($nid);
-      }
-    }
-    $this->nodeJson($node);
+    return $this->pagePath('home');
   }
 
   function blogs() {
@@ -105,6 +93,11 @@ class ContentController extends ControllerBase {
   }
 
   function pagePath($path = "") {
+    $data = $this->pathData($path);
+    return new JsonResponse($data);
+  }
+
+  function pathData($path = "") {
     $path = '/' . str_replace('__','/', $path);
     $source = \Drupal::service('path.alias_manager')->getPathByAlias($path);
     $data = new \StdClass;
@@ -120,15 +113,11 @@ class ContentController extends ControllerBase {
         if ($nid > 0 && $type == 'node') {
           $node = node_load($nid);
           $data->valid = is_object($node); 
+          $data = $this->nodeData($node);
         }
       }
     }
-    if ($data->valid) {
-      return $this->nodeJson($node);
-    } else {
-      $response = new JsonResponse($data);
-      return $response->send();
-    }
+    return $data;
   }
 
   function nodeFull($node) {
@@ -340,9 +329,6 @@ class ContentController extends ControllerBase {
   }
 
   protected function nodeJson($node) {
-    if ($this->langCode !== 'en') {
-      $node = $node->getTranslation($this->langCode);
-    }
     $data = $this->nodeData($node);
     $response = new JsonResponse($data);
     $response->send();
@@ -350,6 +336,9 @@ class ContentController extends ControllerBase {
   }
 
   protected function nodeData($node) {
+    if ($this->langCode !== 'en') {
+      $node = $node->getTranslation($this->langCode);
+    }
     $data = new \StdClass;
     $data->valid = false;
     if (is_object($node)) {

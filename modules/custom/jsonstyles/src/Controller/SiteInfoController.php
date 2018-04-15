@@ -19,6 +19,17 @@ use Drupal\Component\Serialization\Json;
 
 class SiteInfoController extends ControllerBase {
 
+	protected $langCode = 'en';
+
+	function __construct() {
+		if (array_key_exists('lang', $_GET)) {
+      $lc = trim($_GET['lang']);
+      if (is_string($lc) && strlen($lc) > 1) {
+        $this->langCode = $lc;
+      }
+    }
+	}
+
 	function jsonView() {
 
 		$data['menu']    = $this->extractMenu('main');
@@ -38,6 +49,8 @@ class SiteInfoController extends ControllerBase {
 		$data['owner']       = trim($parts[0]);
 		$strapline           = count($parts) > 1?trim($parts[1]):'';
 		$data['strapline']   = $strapline;
+		$content = new ContentController();
+		$data['home'] = $content->pathData('home');
 		$data['nodes']       = $this->allNodeAliasTitles();
 		if (function_exists('ecwid_product_list')) {
 			$data['ecwid_products'] = ecwid_product_list();
@@ -204,6 +217,8 @@ class SiteInfoController extends ControllerBase {
 		$query->addField('ua', 'alias');
 
 		$query->condition('nd.status', 0, '>');
+		$query->condition('nd.langcode', $this->langCode);
+
 		if ($recentOnly) {
 			$oneDayAgo = time()-(24*60*60);
 			$query->condition('nd.changed', $oneDayAgo, '>');
@@ -211,6 +226,15 @@ class SiteInfoController extends ControllerBase {
 		$result = $query->execute();
 		if ($result) {
 			$data = $result->fetchAll();
+			if (!empty($data)) {
+				$items = array();
+				foreach ($data as $item) {
+					if (!isset($items[$item->nid])) {
+						$items[$item->nid] = $item;	
+					}
+				}
+				$data = array_values($items);
+			}
 		}
 		return $data;
 	}
