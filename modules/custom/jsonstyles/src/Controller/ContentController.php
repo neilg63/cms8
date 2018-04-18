@@ -26,6 +26,8 @@ class ContentController extends ControllerBase {
 
   protected $langCode = 'en';
 
+  protected $ecwidItems = [];
+
   protected $settings;
 
   protected $nodeFields = [
@@ -57,7 +59,7 @@ class ContentController extends ControllerBase {
     'field_media' => ['multiple' => false, 'type' => 'media'],
     'field_video' => ['multiple' => false, 'type' => 'media'],
     'field_link' => ['multiple' => true, 'type' => 'link'],
-    'field_layout' => ['multiple' => false, 'type' => 'string'],
+    'field_layout' => ['multiple' => false, 'type' => 'string']
   ];
 
   public function __construct() {
@@ -69,6 +71,7 @@ class ContentController extends ControllerBase {
         $this->langCode = $lc;
       }
     }
+    $this->ecwidItems = ecwid_product_list();
   }
 
   function home() {
@@ -82,14 +85,14 @@ class ContentController extends ControllerBase {
 
   function productsFull() {
     $perPage = (int) $this->getSetting('products_per_page', 12);
-    $this->products(0, $perPage);
+    return $this->products(0, $perPage);
   }
   
 
   function productsFullMore() {
     $perPage = (int) $this->getSetting('products_per_page', 12);
     $max = $perPage * 5;
-    $this->products($perPage, $max);
+    return $this->products($perPage, $max);
   }
 
   function pagePath($path = "") {
@@ -133,9 +136,7 @@ class ContentController extends ControllerBase {
     $data->num_items = count($items);
 
     $data->items = $items;
-
-    $response = new JsonResponse($data);
-    return $response->send();
+    return new JsonResponse($data);
   }
 
   protected function blogListing($start = 0, $perPage = 12) {
@@ -148,8 +149,7 @@ class ContentController extends ControllerBase {
 
     $data->items = $items;
 
-    $response = new JsonResponse($data);
-    return $response->send();
+    return new JsonResponse($data);
   }
 
   protected function getProducts($start = 0, $perPage = 12) {
@@ -249,6 +249,13 @@ class ContentController extends ControllerBase {
       unset($item->svg);
     }
     $item->type = $entity->bundle();
+
+    switch ($item->type) {
+      case 'product':
+        $this->postProcessProduct($item);
+        break;
+    }
+
     return $item;
   }
 
@@ -509,6 +516,29 @@ class ContentController extends ControllerBase {
           return $section;
         }
       }
+    }
+  }
+
+  private function postProcessProduct($item) {
+    if (isset($item->ecwid) && is_array($item->ecwid)) {
+      $item->variants = [];
+      foreach ($item->ecwid as $ecId) {
+        foreach ($this->ecwidItems as $variant) {
+          if ($variant['id'] == $ecId) {
+            $item->variants[] = $variant;
+          }
+        }
+      }
+      if (isset($item->sections) && is_array($item->sections)) {
+        foreach ($item->sections as $index => &$section) {
+          if (is_object($section)) {
+            if (array_key_exists($index, $item->ecwid) && is_string($item->ecwid[$index])) {
+              $section->ecwid = $item->ecwid[$index];
+            }
+          }
+        }
+      }
+      unset($item->ecwid);
     }
   }
 
