@@ -32,7 +32,8 @@ class SiteInfoController extends ControllerBase {
 
 	function jsonView() {
 
-		$data['menu']    = $this->extractMenu('main');
+		$menu = $this->extractMenu('main');
+		$data['menu']    = $menu;
 		$jsSettings      = \Drupal::config('jsonstyles.settings');
 		$copyrightNotice = $jsSettings->get('copyright');
 		$copyrightNotice = preg_replace('#!year\b#i', date("Y"), $copyrightNotice);
@@ -54,10 +55,15 @@ class SiteInfoController extends ControllerBase {
 		$data['nodes']       = $this->allNodeAliasTitles();
 		if (function_exists('ecwid_product_list')) {
 			$data['ecwid_products'] = ecwid_product_list();
+			$data['pages'] = [];
+			foreach ($menu as $mItem) {
+				$nodeData = $content->pathData($mItem['link']);
+				if ($nodeData->valid) {
+					$data['pages'][$mItem['link']] = $nodeData;
+				}
+			}
 		}
-		$response            = new JsonResponse($data);
-		$response->send();
-		exit;
+		return new JsonResponse($data);
 	}
 
 	protected function extractMenu($menuName = 'main') {
@@ -111,18 +117,14 @@ class SiteInfoController extends ControllerBase {
 				$data['is_editor']    = in_array('administrator', $data['roles']) || $account->hasPermission('bypass node access');
 			}
 		}
-		$response = new JsonResponse($data);
-		$response->send();
-		exit;
+		return new JsonResponse($data);
 	}
 
 	function editedView() {
 		$data          = array();
 		$data['nodes'] = $this->allNodeAliasTitles(true, false);
 		$data['total'] = count($data['nodes']);
-		$response      = new JsonResponse($data);
-		$response->send();
-		exit;
+		return new JsonResponse($data);
 	}
 
 	function writeSnippets() {
