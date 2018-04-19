@@ -22,7 +22,7 @@ Poltergeist.WebPage = (function () {
 
   WebPage.EXTENSIONS = [];
 
-  function WebPage(nativeWebPage, browser) {
+  function WebPage(nativeWebPage) {
     var callback, i, callBacksLength, callBacksRef;
 
     //Lets create the native phantomjs webpage
@@ -30,11 +30,6 @@ Poltergeist.WebPage = (function () {
       this._native = require('webpage').create();
     } else {
       this._native = nativeWebPage;
-    }
-
-    this.browser = browser;
-    if (this.browser) {
-      this.browser.registerPage(this);  // Make the browser aware of opened windows/frames
     }
 
     this.id = 0;
@@ -103,11 +98,8 @@ Poltergeist.WebPage = (function () {
    * @return {boolean}
    */
   WebPage.prototype.onClosingNative = function () {
-    this.closed = true;
-    if (this.browser) {
-      this.browser.unregisterPage(this);  // Make the browser aware of closed windows/frames
-    }
-    return true;
+    this.handle = null;
+    return this.closed = true;
   };
 
   /**
@@ -153,15 +145,6 @@ Poltergeist.WebPage = (function () {
     }
 
     return this.source;
-  };
-
-  /**
-   * Make the browser aware of new windows/frames
-   *
-   * @param {webPage} newPage
-   */
-  WebPage.prototype.onPageCreatedNative = function (newPage) {
-    new WebPage(newPage, this.browser);
   };
 
   /**

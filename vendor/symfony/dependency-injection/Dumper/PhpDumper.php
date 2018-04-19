@@ -119,7 +119,6 @@ class PhpDumper extends Dumper
             'debug' => true,
             'hot_path_tag' => 'container.hot_path',
             'inline_class_loader_parameter' => 'container.dumper.inline_class_loader',
-            'build_time' => time(),
         ), $options);
 
         $this->namespace = $options['namespace'];
@@ -129,11 +128,6 @@ class PhpDumper extends Dumper
 
         if (0 !== strpos($baseClass = $options['base_class'], '\\') && 'Container' !== $baseClass) {
             $baseClass = sprintf('%s\%s', $options['namespace'] ? '\\'.$options['namespace'] : '', $baseClass);
-            $baseClassWithNamespace = $baseClass;
-        } elseif ('Container' === $baseClass) {
-            $baseClassWithNamespace = Container::class;
-        } else {
-            $baseClassWithNamespace = $baseClass;
         }
 
         $this->initializeMethodNamesMap('Container' === $baseClass ? Container::class : $baseClass);
@@ -175,7 +169,7 @@ class PhpDumper extends Dumper
         }
 
         $code =
-            $this->startClass($options['class'], $baseClass, $baseClassWithNamespace).
+            $this->startClass($options['class'], $baseClass).
             $this->addServices().
             $this->addDefaultParametersMethod().
             $this->endClass()
@@ -217,7 +211,7 @@ EOF;
             array_pop($code);
             $code["Container{$hash}/{$options['class']}.php"] = substr_replace($files[$options['class'].'.php'], "<?php\n\nnamespace Container{$hash};\n", 0, 6);
             $namespaceLine = $this->namespace ? "\nnamespace {$this->namespace};\n" : '';
-            $time = $options['build_time'];
+            $time = time();
             $id = hash('crc32', $hash.$time);
 
             $code[$options['class'].'.php'] = <<<EOF
@@ -404,8 +398,6 @@ EOTXT;
             if (!$proxyDumper->isProxyCandidate($definition)) {
                 continue;
             }
-            // register class' reflector for resource tracking
-            $this->container->getReflectionClass($definition->getClass());
             $proxyCode = "\n".$proxyDumper->getProxyCode($definition);
             if ($strip) {
                 $proxyCode = "<?php\n".$proxyCode;
@@ -925,13 +917,12 @@ EOF;
     /**
      * Adds the class headers.
      *
-     * @param string $class                  Class name
-     * @param string $baseClass              The name of the base class
-     * @param string $baseClassWithNamespace Fully qualified base class name
+     * @param string $class     Class name
+     * @param string $baseClass The name of the base class
      *
      * @return string
      */
-    private function startClass($class, $baseClass, $baseClassWithNamespace)
+    private function startClass($class, $baseClass)
     {
         $bagClass = $this->container->isCompiled() ? 'use Symfony\Component\DependencyInjection\ParameterBag\FrozenParameterBag;' : 'use Symfony\Component\DependencyInjection\ParameterBag\\ParameterBag;';
         $namespaceLine = !$this->asFiles && $this->namespace ? "\nnamespace {$this->namespace};\n" : '';
@@ -979,18 +970,9 @@ EOF;
         }
 
         if ($this->container->isCompiled()) {
-            if (Container::class !== $baseClassWithNamespace) {
-                $r = $this->container->getReflectionClass($baseClassWithNamespace, false);
-
-                if (null !== $r && (null !== $constructor = $r->getConstructor()) && 0 === $constructor->getNumberOfRequiredParameters()) {
-                    $code .= "        parent::__construct();\n\n";
-                }
-            }
-
             if ($this->container->getParameterBag()->all()) {
                 $code .= "        \$this->parameters = \$this->getDefaultParameters();\n\n";
             }
-
             $code .= "        \$this->services = array();\n";
         } else {
             $arguments = $this->container->getParameterBag()->all() ? 'new ParameterBag($this->getDefaultParameters())' : null;
@@ -1061,10 +1043,10 @@ EOF;
             }
             $code .= <<<EOF
 
-    protected function createProxy(\$class, \Closure \$factory)
-    {
-        {$proxyLoader}return \$factory();
-    }
+protected function createProxy(\$class, \Closure \$factory)
+{
+    {$proxyLoader}return \$factory();
+}
 
 EOF;
             break;
@@ -1232,9 +1214,9 @@ EOF;
         $code = "        \$this->aliases = array(\n";
         ksort($aliases);
         foreach ($aliases as $alias => $id) {
-            $id = $this->container->normalizeId($id);
+            $id = (string) $id;
             while (isset($aliases[$id])) {
-                $id = $this->container->normalizeId($aliases[$id]);
+                $id = (string) $aliases[$id];
             }
             $code .= '            '.$this->doExport($alias).' => '.$this->doExport($id).",\n";
         }
@@ -1555,7 +1537,7 @@ EOF;
             if (is_array($argument)) {
                 $this->getServiceCallsFromArguments($argument, $calls, $isPreInstance, $callerId, $behavior, $step);
             } elseif ($argument instanceof Reference) {
-                $id = $this->container->normalizeId($argument);
+                $id = (string) $argument;
 
                 if (!isset($calls[$id])) {
                     $calls[$id] = (int) ($isPreInstance && isset($this->circularReferences[$callerId][$id]));
@@ -1625,7 +1607,7 @@ EOF;
 
                 continue;
             } elseif ($argument instanceof Reference) {
-                $argumentId = $this->container->normalizeId($argument);
+                $argumentId = (string) $argument;
                 if ($id === $argumentId) {
                     return true;
                 }
@@ -1790,12 +1772,11 @@ EOF;
         } elseif ($value instanceof Variable) {
             return '$'.$value;
         } elseif ($value instanceof Reference) {
-            $id = $this->container->normalizeId($value);
-            if (null !== $this->referenceVariables && isset($this->referenceVariables[$id])) {
+            if (null !== $this->referenceVariables && isset($this->referenceVariables[$id = (string) $value])) {
                 return $this->dumpValue($this->referenceVariables[$id], $interpolate);
             }
 
-            return $this->getServiceCall($id, $value);
+            return $this->getServiceCall((string) $value, $value);
         } elseif ($value instanceof Expression) {
             return $this->getExpressionLanguage()->compile((string) $value, array('this' => 'container'));
         } elseif ($value instanceof Parameter) {
@@ -1882,7 +1863,6 @@ EOF;
         while ($this->container->hasAlias($id)) {
             $id = (string) $this->container->getAlias($id);
         }
-        $id = $this->container->normalizeId($id);
 
         if ('service_container' === $id) {
             return '$this';

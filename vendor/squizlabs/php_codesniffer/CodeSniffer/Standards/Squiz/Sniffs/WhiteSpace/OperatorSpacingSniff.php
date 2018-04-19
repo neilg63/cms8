@@ -84,7 +84,6 @@ class Squiz_Sniffs_WhiteSpace_OperatorSpacingSniff implements PHP_CodeSniffer_Sn
         $tokens = $phpcsFile->getTokens();
 
         // Skip default values in function declarations.
-        // Skip declare statements.
         if ($tokens[$stackPtr]['code'] === T_EQUAL
             || $tokens[$stackPtr]['code'] === T_MINUS
         ) {
@@ -95,7 +94,6 @@ class Squiz_Sniffs_WhiteSpace_OperatorSpacingSniff implements PHP_CodeSniffer_Sn
                     $function = $tokens[$bracket]['parenthesis_owner'];
                     if ($tokens[$function]['code'] === T_FUNCTION
                         || $tokens[$function]['code'] === T_CLOSURE
-                        || $tokens[$function]['code'] === T_DECLARE
                     ) {
                         return;
                     }

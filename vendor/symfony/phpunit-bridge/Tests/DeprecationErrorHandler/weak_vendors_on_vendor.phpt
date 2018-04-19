@@ -20,21 +20,10 @@ require __DIR__.'/fake_vendor/acme/lib/deprecation_riddled.php';
 
 ?>
 --EXPECTF--
-Unsilenced deprecation notices (3)
-
-  2x: unsilenced foo deprecation
-    2x in FooTestCase::testLegacyFoo
-
-  1x: unsilenced bar deprecation
-    1x in FooTestCase::testNonLegacyBar
+Unsilenced deprecation notices (2)
 
 Remaining vendor deprecation notices (1)
 
-  1x: silenced bar deprecation
-    1x in FooTestCase::testNonLegacyBar
-
-Legacy deprecation notices (2)
+Legacy deprecation notices (1)
 
 Other deprecation notices (1)
-
-  1x: root deprecation

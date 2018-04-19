@@ -209,7 +209,7 @@ class Form extends Link implements \ArrayAccess
                 parse_str($query, $currentParameters);
             }
 
-            $queryString = http_build_query(array_merge($currentParameters, $this->getValues()), '', '&');
+            $queryString = http_build_query(array_merge($currentParameters, $this->getValues()), null, '&');
 
             $pos = strpos($uri, '?');
             $base = false === $pos ? $uri : substr($uri, 0, $pos);

@@ -18,9 +18,10 @@
  * Verifies that :
  * <ul>
  *  <li>A class doc comment exists.</li>
- *  <li>The comment uses the correct docblock style.</li>
+ *  <li>There is exactly one blank line before the class comment.</li>
  *  <li>There are no blank lines after the class comment.</li>
- *  <li>No tags are used in the docblock.</li>
+ *  <li>Short and long descriptions end with a full stop and start with capital letter.</li>
+ *  <li>There is a blank line between descriptions.</li>
  * </ul>
  *
  * @category  PHP

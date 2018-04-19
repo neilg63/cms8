@@ -127,8 +127,7 @@ final class Iconv
 
     public static function iconv($inCharset, $outCharset, $str)
     {
-        $str = (string) $str;
-        if ('' === $str) {
+        if ('' === $str .= '') {
             return '';
         }
 
@@ -146,33 +145,22 @@ final class Iconv
             $inCharset = 'iso-8859-1';
         }
 
-        do {
-            $loop = false;
+        if ('//translit' === substr($outCharset, -10)) {
+            $translit = '//TRANSLIT';
+            $outCharset = substr($outCharset, 0, -10);
+        }
 
-            if ('//translit' === substr($outCharset, -10)) {
-                $loop = $translit = true;
-                $outCharset = substr($outCharset, 0, -10);
-            }
+        if ('//ignore' === substr($outCharset, -8)) {
+            $ignore = '//IGNORE';
+            $outCharset = substr($outCharset, 0, -8);
+        }
 
-            if ('//ignore' === substr($outCharset, -8)) {
-                $loop = $ignore = true;
-                $outCharset = substr($outCharset, 0, -8);
-            }
-        } while ($loop);
-
-        do {
-            $loop = false;
-
-            if ('//translit' === substr($inCharset, -10)) {
-                $loop = true;
-                $inCharset = substr($inCharset, 0, -10);
-            }
-
-            if ('//ignore' === substr($inCharset, -8)) {
-                $loop = true;
-                $inCharset = substr($inCharset, 0, -8);
-            }
-        } while ($loop);
+        if ('//translit' === substr($inCharset, -10)) {
+            $inCharset = substr($inCharset, 0, -10);
+        }
+        if ('//ignore' === substr($inCharset, -8)) {
+            $inCharset = substr($inCharset, 0, -8);
+        }
 
         if (isset(self::$alias[ $inCharset])) {
             $inCharset = self::$alias[ $inCharset];
@@ -533,7 +521,7 @@ final class Iconv
             return false;
         }
 
-        $s = (string) $s;
+        $s .= '';
         $slen = self::iconv_strlen($s, 'utf-8');
         $start = (int) $start;
 
@@ -634,7 +622,7 @@ final class Iconv
         return substr($u, 0, $j);
     }
 
-    private static function mapToUtf8(&$result, array $map, $str, $ignore)
+    private static function mapToUtf8(&$result, $map, $str, $ignore)
     {
         $len = strlen($str);
         for ($i = 0; $i < $len; ++$i) {
@@ -652,7 +640,7 @@ final class Iconv
         return true;
     }
 
-    private static function mapFromUtf8(&$result, array $map, $str, $ignore, $translit)
+    private static function mapFromUtf8(&$result, $map, $str, $ignore, $translit)
     {
         $ulenMask = self::$ulenMask;
         $valid = self::$isValidUtf8;
@@ -708,7 +696,7 @@ final class Iconv
         return true;
     }
 
-    private static function qpByteCallback(array $m)
+    private static function qpByteCallback($m)
     {
         return '='.strtoupper(dechex(ord($m[0])));
     }
