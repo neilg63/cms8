@@ -39,7 +39,6 @@ class PEAR_Sniffs_Commenting_ClassCommentSniff extends PEAR_Sniffs_Commenting_Fi
         return array(
                 T_CLASS,
                 T_INTERFACE,
-                T_TRAIT,
                );
 
     }//end register()

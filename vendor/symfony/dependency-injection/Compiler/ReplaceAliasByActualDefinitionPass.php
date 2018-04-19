@@ -36,7 +36,7 @@ class ReplaceAliasByActualDefinitionPass extends AbstractRecursivePass
         $seenAliasTargets = array();
         $replacements = array();
         foreach ($container->getAliases() as $definitionId => $target) {
-            $targetId = $container->normalizeId($target);
+            $targetId = (string) $target;
             // Special case: leave this target alone
             if ('service_container' === $targetId) {
                 continue;
@@ -77,7 +77,7 @@ class ReplaceAliasByActualDefinitionPass extends AbstractRecursivePass
      */
     protected function processValue($value, $isRoot = false)
     {
-        if ($value instanceof Reference && isset($this->replacements[$referenceId = $this->container->normalizeId($value)])) {
+        if ($value instanceof Reference && isset($this->replacements[$referenceId = (string) $value])) {
             // Perform the replacement
             $newId = $this->replacements[$referenceId];
             $value = new Reference($newId, $value->getInvalidBehavior());

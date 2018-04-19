@@ -59,10 +59,6 @@ $foo = new FooTestCase();
 $foo->testLegacyFoo();
 $foo->testNonLegacyBar();
 
-register_shutdown_function(function () {
-    exit('I get precedence over any exit statements inside the deprecation error handler.');
-});
-
 ?>
 --EXPECTF--
 Unsilenced deprecation notices (3)
@@ -84,4 +80,3 @@ Other deprecation notices (1)
 
   1x: root deprecation
 
-I get precedence over any exit statements inside the deprecation error handler.

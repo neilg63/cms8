@@ -101,8 +101,11 @@ class ContentController extends ControllerBase {
     return new JsonResponse($data);
   }
 
-  function pathData($path = "") {
-    $path = '/' . str_replace('__','/', $path);
+  function pathData($path = "") { 
+    $path = str_replace('__','/', $path);
+    if (strpos($path,'/') !== 0) {
+      $path = '/' . $path;
+    }
     $source = \Drupal::service('path.alias_manager')->getPathByAlias($path);
     $data = new \StdClass;
     $data->source = $source;
@@ -485,7 +488,7 @@ class ContentController extends ControllerBase {
           $image_set[$key] = _jsonstyles_clean_uri($uri);
         }
       } else {
-        $image_set['orig'] = file_create_url($uri);
+        $image_set['orig'] = _json_style_match_public_uri($uri);
       }
     }
     if ($type != 'other') {

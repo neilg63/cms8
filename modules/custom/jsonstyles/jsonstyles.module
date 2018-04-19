@@ -239,7 +239,7 @@ function jsonstyles_metatag($property, $value, $nameKey = 'property') {
   }
 }
 
-function _jsonstyle_add_response_styles_to_images($section, $value, $obj, $field_name = '', array $styles = array()) {
+/*function _jsonstyle_add_response_styles_to_images($section, $value, $obj, $field_name = '', array $styles = array()) {
   $obj->{$field_name} = array();
   if (!empty($value) && !empty($field_name) && is_object($obj)) {
     $single_mode = $field_name == 'image';
@@ -400,10 +400,18 @@ function jsonstyles_process_compact_image_field($field,$styles) {
     }
   }
   return $images;
-}
+}*/
 
 function _jsonstyles_clean_uri($uri = "") {
-  return preg_replace('#^'.Drupal::request()->getSchemeAndHttpHost().'#','',$uri);
+  //return preg_replace('#^'.Drupal::request()->getSchemeAndHttpHost().'#','',$uri);
+  $parts = explode('/public/',$uri);
+  return array_pop($parts);
+}
+
+function _json_style_match_public_uri($uri) {
+  $path = file_create_url($uri);
+  $parts = explode('/files/',$path);
+  return array_pop($parts);
 }
 
 function _jsonstyles_add_media_embed($section, $value, $obj, $fn) {

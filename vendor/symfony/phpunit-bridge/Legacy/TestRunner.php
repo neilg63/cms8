@@ -23,7 +23,7 @@ class TestRunner extends \PHPUnit_TextUI_TestRunner
      */
     protected function handleConfiguration(array &$arguments)
     {
-        $listener = new SymfonyTestsListenerForV5();
+        $listener = new SymfonyTestsListener();
 
         $result = parent::handleConfiguration($arguments);
 
@@ -32,7 +32,7 @@ class TestRunner extends \PHPUnit_TextUI_TestRunner
         $registeredLocally = false;
 
         foreach ($arguments['listeners'] as $registeredListener) {
-            if ($registeredListener instanceof SymfonyTestsListenerForV5) {
+            if ($registeredListener instanceof SymfonyTestsListener) {
                 $registeredListener->globalListenerDisabled();
                 $registeredLocally = true;
                 break;

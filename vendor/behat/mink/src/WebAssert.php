@@ -319,9 +319,10 @@ class WebAssert
     public function responseContains($text)
     {
         $actual = $this->session->getPage()->getContent();
+        $regex = '/'.preg_quote($text, '/').'/ui';
         $message = sprintf('The string "%s" was not found anywhere in the HTML response of the current page.', $text);
 
-        $this->assert(stripos($actual, $text) !== false, $message);
+        $this->assert((bool) preg_match($regex, $actual), $message);
     }
 
     /**
@@ -334,9 +335,10 @@ class WebAssert
     public function responseNotContains($text)
     {
         $actual = $this->session->getPage()->getContent();
+        $regex = '/'.preg_quote($text, '/').'/ui';
         $message = sprintf('The string "%s" appears in the HTML response of this page, but it should not.', $text);
 
-        $this->assert(stripos($actual, $text) === false, $message);
+        $this->assert(!preg_match($regex, $actual), $message);
     }
 
     /**
