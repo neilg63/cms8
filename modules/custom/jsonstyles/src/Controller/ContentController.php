@@ -46,6 +46,7 @@ class ContentController extends ControllerBase {
     'field_alignment' => ['multiple' => false, 'type' => 'split', 'split' => '|', 'merge' => 'images'],
     'field_ecwid' => ['multiple' => true, 'type' => 'string'],
     'field_layout' => ['multiple' => false, 'type' => 'string'],
+    'field_products' => ['multiple' => true, 'type' => 'node'],
     'field_tags' => ['multiple' => true, 'type' => 'term'],
     'field_weight' => ['multiple' => false, 'type' => 'int'],
     'changed' => ['multiple' => false, 'type' => 'int']
@@ -282,6 +283,12 @@ class ContentController extends ControllerBase {
           if (!in_array($img['id'], $imgIds)) {
             $out[] = $img;
             $imgIds[] = $img['id'];
+          }
+          break;
+        case 'node':
+	  $n = node_load($val);
+          if (is_object($n)) {
+	    $out[] = $this->nodeData($n);
           }
           break;
         case 'link':
