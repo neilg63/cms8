@@ -53,6 +53,7 @@ class SiteInfoController extends ControllerBase {
 		$content = new ContentController();
 		$data['home'] = $content->pathData('home');
 		$data['nodes']       = $this->allNodeAliasTitles();
+                $data['valid'] = !empty($menu);
 		if (function_exists('ecwid_product_list')) {
 			$data['ecwid_products'] = ecwid_product_list();
 			$data['pages'] = [];
