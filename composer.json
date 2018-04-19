@@ -9,7 +9,8 @@
         "league/oauth2-client": "^2.3",
         "league/oauth2-server": "^7.0",
         "drupal/eleven": "1.x-dev",
-        "drupal/adminimal_theme": "^1.3"
+        "drupal/adminimal_theme": "^1.3",
+        "drupal/svg_image_field": "^1.1"
     },
     "replace": {
         "drupal/core": "^8.5"
