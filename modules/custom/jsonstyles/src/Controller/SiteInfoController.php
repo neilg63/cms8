@@ -54,6 +54,9 @@ class SiteInfoController extends ControllerBase {
 		$data['home'] = $content->pathData('home');
 		$data['nodes']       = $this->allNodeAliasTitles();
 		if (function_exists('ecwid_product_list')) {
+			$ecSettings = \Drupal::config('ecwid.settings');
+			$storeId = $ecSettings->get('store_id');
+			$data['ecwid_store_key'] = 'PSecwid__'.$storeId.'PScart';
 			$data['ecwid_products'] = ecwid_product_list();
 			$data['pages'] = [];
 			foreach ($menu as $mItem) {
