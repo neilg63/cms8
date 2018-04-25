@@ -54,13 +54,15 @@ class ContentController extends ControllerBase {
 
   protected $paraFields = [
     'field_title' => ['multiple' => false, 'type' => 'string'],
-    'field_text' => ['multiple' => false, 'type' => 'string'],
+    'field_text' => ['multiple' => true, 'type' => 'string'],
     'field_images' => ['multiple' => true, 'type' => 'image'],
     'field_image' => ['multiple' => false, 'type' => 'image'],
     'field_media' => ['multiple' => false, 'type' => 'media'],
     'field_video' => ['multiple' => false, 'type' => 'media'],
     'field_links' => ['multiple' => true, 'type' => 'link'],
-    'field_layout' => ['multiple' => false, 'type' => 'string']
+    'field_products' => ['multiple' => true, 'type' => 'ref'],
+    'field_layout' => ['multiple' => false, 'type' => 'string'],
+    'field_text_layout' => ['multiple' => false, 'type' => 'string']
   ];
 
   public function __construct() {
