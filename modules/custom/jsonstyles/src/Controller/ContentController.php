@@ -192,7 +192,7 @@ class ContentController extends ControllerBase {
     $index = 0;
     foreach ($nodes as $nid => $node) {
       if ($this->langCode != 'en') {
-        $node = $node->getTranslation($this->langCode);
+        $this->provideTranslation($node);
       }
       $item = $this->parseFields($node, $this->nodeFields);
       if (is_object($item)) {
@@ -362,7 +362,7 @@ class ContentController extends ControllerBase {
 
   protected function nodeData($node) {
     if ($this->langCode !== 'en') {
-      $node = $node->getTranslation($this->langCode);
+      $this->provideTranslation($node);
     }
     $data = new \StdClass;
     $data->valid = false;
@@ -583,6 +583,23 @@ class ContentController extends ControllerBase {
       $value = $default;
     }
     return $value;
+  }
+
+  private function provideTranslation($node) {
+    if ($this->langCode !== 'en') {
+      $val = $node->get('langcode')->getValue();
+      if (is_array($val) && isset($val[0]['value'])) {
+        $lc = $val[0]['value'];
+        if ($lc != $this->langCode) {
+          if ($node->hasTranslation($this->langCode)) {
+            $n = $node->getTranslation($this->langCode);
+            if ($n instanceof \Drupal\node\Entity\Node) {
+              $node = $n;
+            }
+          }
+        }
+      }
+    }
   }
 
 }
