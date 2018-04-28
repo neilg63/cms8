@@ -1056,7 +1056,7 @@ class DrupalKernel implements DrupalKernelInterface, TerminableInterface {
     $host_patterns = Settings::get('trusted_host_patterns', []);
     if (PHP_SAPI !== 'cli' && !empty($host_patterns)) {
       if (static::setupTrustedHosts($request, $host_patterns) === FALSE) {
-        //throw new BadRequestHttpException('The provided host name is not valid for this server.');
+        throw new BadRequestHttpException('The provided host name is not valid for this server.');
       }
     }
 
