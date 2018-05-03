@@ -61,6 +61,7 @@ class ContentController extends ControllerBase {
     'field_video' => ['multiple' => false, 'type' => 'media'],
     'field_link' => ['multiple' => true, 'type' => 'link'],
     'field_layout' => ['multiple' => false, 'type' => 'string'],
+    'field_products' => ['multiple' => true, 'type' => 'ref'],
     'field_text_layout' => ['multiple' => false, 'type' => 'string']
   ];
 
@@ -404,7 +405,7 @@ class ContentController extends ControllerBase {
             $row['id'] = (int) $val['target_id'];
             $row['revision_id'] = (int) $val['target_revision_id'];
           } else {
-            $row = (int) $val['target_id'];  
+            $row = (int) $val['target_id'];
           }
         } else {
           $row = $val;
