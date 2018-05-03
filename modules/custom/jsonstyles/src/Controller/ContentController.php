@@ -60,7 +60,8 @@ class ContentController extends ControllerBase {
     'field_media' => ['multiple' => false, 'type' => 'media'],
     'field_video' => ['multiple' => false, 'type' => 'media'],
     'field_link' => ['multiple' => true, 'type' => 'link'],
-    'field_layout' => ['multiple' => false, 'type' => 'string']
+    'field_layout' => ['multiple' => false, 'type' => 'string'],
+    'field_text_layout' => ['multiple' => false, 'type' => 'string']
   ];
 
   public function __construct() {
