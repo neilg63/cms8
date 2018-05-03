@@ -56,7 +56,14 @@ class SiteInfoController extends ControllerBase {
 		$data['strapline']   = $strapline;
 		$content = new ContentController();
 		$data['home'] = $content->pathData('home');
-		$data['nodes']       = $this->allNodeAliasTitles();
+		$edited        = $this->allNodeAliasTitles();
+                $timestamps = array();
+                foreach ($edited as $row) {
+		  $timestamps[] = (int) $row->changed;
+		}
+                $data['last_edited'] = max($timestamps);
+		$data['nodes']       = $edited;
+                $data['valid'] = !empty($menu);
 		if (function_exists('ecwid_product_list')) {
 			$ecSettings = \Drupal::config('ecwid.settings');
 			$storeId = $ecSettings->get('store_id');

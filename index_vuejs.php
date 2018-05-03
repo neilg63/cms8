@@ -15,7 +15,7 @@ if (isset($_SERVER['REQUEST_URI'])) {
 			$override = $_GET['show'] == 'raw';
 		}
 		if (!$override) {
-			$vuefront = __DIR__ .'/vuejs.php';
+			$vuefront = __DIR__ .'/vuejs.html';
 			if (file_exists($vuefront)) {
 				require_once $vuefront;
 				exit;
