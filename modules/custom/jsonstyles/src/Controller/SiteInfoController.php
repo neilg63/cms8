@@ -43,7 +43,6 @@ class SiteInfoController extends ControllerBase {
 		$copyrightNotice = preg_replace('#!year\b#i', date("Y"), $copyrightNotice);
 		$data['footer']  = array(
 			'copyright' => $copyrightNotice,
-			'menu'      => $this->extractMenu('footer'),
 			'email'     => $jsSettings->get('email')
 		);
 		$config              = \Drupal::config('system.site');
@@ -91,7 +90,13 @@ class SiteInfoController extends ControllerBase {
 		foreach ($parts as $part) {
 			if (strpos($part, '<a') >= 0) {
 				if (preg_match($regex, $part, $match)) {
-					$json[] = array('link' => $match[1], 'title' => html_entity_decode($match[2]));
+					$link = preg_replace('#^/[a-z][a-z]/(\w+.*?)?$#', "/$1", $match[1]);
+					if (strlen($link) > 3 && strpos($link, '/node/') === 0) {
+						
+						$link = \Drupal::service('path.alias_manager')->getAliasByPath($link, 'en');
+
+					}
+					$json[] = array('link' => $link, 'title' => html_entity_decode($match[2]));
 				}
 			}
 		}

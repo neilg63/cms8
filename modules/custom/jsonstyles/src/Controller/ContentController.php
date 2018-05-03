@@ -108,7 +108,7 @@ class ContentController extends ControllerBase {
     if (strpos($path,'/') !== 0) {
       $path = '/' . $path;
     }
-    $source = \Drupal::service('path.alias_manager')->getPathByAlias($path);
+    $source = \Drupal::service('path.alias_manager')->getPathByAlias($path,'en');
     $data = new \StdClass;
     $data->source = $source;
     $data->path = $path;
@@ -363,7 +363,7 @@ class ContentController extends ControllerBase {
       if ($data->valid) {
         $data = $this->parseFields($node, $this->nodeFields);
         $path = '/node/' . $node->id();
-        $data->path = \Drupal::service('path.alias_manager')->getAliasByPath($path);
+        $data->path = \Drupal::service('path.alias_manager')->getAliasByPath($path, 'en');
         $data->valid = true;
       }
     }
@@ -455,7 +455,7 @@ class ContentController extends ControllerBase {
       $parts = explode(':',$value);
       array_shift($parts);
       $value = '/' . implode(':',$parts);
-      $value = \Drupal::service('path.alias_manager')->getAliasByPath($value);
+      $value = \Drupal::service('path.alias_manager')->getAliasByPath($value, 'en');
     }
     $link['url'] = $value;
     return $link;
