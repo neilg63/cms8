@@ -90,7 +90,7 @@ class SiteInfoController extends ControllerBase {
 		foreach ($parts as $part) {
 			if (strpos($part, '<a') >= 0) {
 				if (preg_match($regex, $part, $match)) {
-					$link = preg_replace('#^/[a-z][a-z]/(\w+.*?)?$#', "/$1", $match[1]);
+					$link = preg_replace('#^/[a-z][a-z]/?(\w+.*?)?$#', "/$1", $match[1]);
 					if (strlen($link) > 3 && strpos($link, '/node/') === 0) {
 						
 						$link = \Drupal::service('path.alias_manager')->getAliasByPath($link, 'en');
