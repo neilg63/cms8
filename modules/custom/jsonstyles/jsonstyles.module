@@ -60,7 +60,7 @@ function jsonstyles_render_node_snippet(Drupal\Core\Entity\EntityInterface $enti
 }
 
 function jsonstyles_write_snippet($file_name = '',$content = '') {
-  $fileDir = DRUPAL_ROOT . '/files/snippets';
+  $fileDir = jsonstyles_snippets_directory_path(false);
   if (!empty($file_name) && !empty($content)) {
     if (!is_dir($fileDir)) {
       mkdir($fileDir);
@@ -82,6 +82,59 @@ function jsonstyles_write_snippet($file_name = '',$content = '') {
       }
     }
   }
+}
+
+function jsonstyles_replace_placeholders($html, $data) {
+  if (is_object($data)) {
+    foreach ($data as $key => $string) {
+      $regex = '<\!--+\s*#'.$key.'\s*-->';
+      $html = preg_replace('/'.$regex.'/i', $string, $html);
+    }
+  }
+  return $html;
+}
+
+function jsonstyles_build_template() {
+  $vuefront = DRUPAL_ROOT .'/vuejs.html';
+  $html = '';
+  if (file_exists($vuefront)) {
+    $html = file_get_contents($vuefront);
+
+    $data = jsonstyles_preloaded();
+    $html = jsonstyles_replace_placeholders($html, $data);
+    $vue_html_with_content = jsonstyles_snippets_directory_path() . 'vuejs.html';
+    file_put_contents($vue_html_with_content, $html);
+  }
+  return $html;
+}
+
+
+function jsonstyles_preloaded() {
+  $data = new \StdClass;
+  $snippets_dir = jsonstyles_snippets_directory_path();
+  $files = [
+    'meta' => '__home.meta',
+    'title' => '__home.title',
+    'content' => '__home.meta',
+    'core' => 'core-data.json'
+  ];
+
+  foreach ($files as $key => $fn) {
+    $path = $snippets_dir . $fn;
+    $data->{$key} = '';
+    if (file_exists($path)) {
+      $data->{$key} = file_get_contents($path);
+    }
+  }
+  return $data;
+}
+
+function jsonstyles_snippets_directory_path($addSlash = true) {
+  $dir = DRUPAL_ROOT . DIRECTORY_SEPARATOR . 'files' . DIRECTORY_SEPARATOR . 'snippets';
+  if ($addSlash) {
+    $dir .= DIRECTORY_SEPARATOR;
+  }
+  return $dir;
 }
 
 function jsonstyles_metatags_from_entity($node, $alias = '') {

@@ -54,7 +54,7 @@ class ContentController extends ControllerBase {
 
   protected $paraFields = [
     'field_title' => ['multiple' => false, 'type' => 'string'],
-    'field_text' => ['multiple' => false, 'type' => 'string'],
+    'field_text' => ['multiple' => true, 'type' => 'string'],
     'field_images' => ['multiple' => true, 'type' => 'image'],
     'field_image' => ['multiple' => false, 'type' => 'image'],
     'field_media' => ['multiple' => false, 'type' => 'media'],
@@ -66,12 +66,14 @@ class ContentController extends ControllerBase {
   public function __construct() {
     $this->styles = jsonstyles_fetch_stylers();
     $this->settings = \Drupal::config('jsonstyles.settings');
+    $lc = 'en';
     if (array_key_exists('lang', $_GET)) {
       $lc = trim($_GET['lang']);
       if (is_string($lc) && strlen($lc) > 1) {
         $this->langCode = $lc;
       }
     }
+    \Drupal::configFactory()->getEditable('system.site')->set('default_langcode', $lc)->save();
     $this->ecwidItems = ecwid_product_list();
   }
 
@@ -119,7 +121,7 @@ class ContentController extends ControllerBase {
         $type = array_pop($parts);
         if ($nid > 0 && $type == 'node') {
           $node = node_load($nid);
-          $data->valid = is_object($node); 
+          $data->valid = is_object($node);
           $data = $this->nodeData($node);
         }
       }
@@ -190,7 +192,7 @@ class ContentController extends ControllerBase {
     $index = 0;
     foreach ($nodes as $nid => $node) {
       if ($this->langCode != 'en') {
-        $node = $node->getTranslation($this->langCode);
+        $node = $this->provideTranslation($node);
       }
       $item = $this->parseFields($node, $this->nodeFields);
       if (is_object($item)) {
@@ -274,7 +276,7 @@ class ContentController extends ControllerBase {
           $out[] = $this->getTerm($val);
           break;
         case 'paragraph':
-          $val = (int) $val;
+          //$val = (int) $val;
           $section = $this->getSection($val, $index);
           if (!empty($section)) {
             $out[] = $section;
@@ -289,9 +291,9 @@ class ContentController extends ControllerBase {
           }
           break;
         case 'node':
-	  $n = node_load($val);
+          $n = node_load($val);
           if (is_object($n)) {
-	    $out[] = $this->nodeData($n);
+            $out[] = $this->nodeData($n);
           }
           break;
         case 'link':
@@ -353,9 +355,7 @@ class ContentController extends ControllerBase {
   }
 
   protected function nodeData($node) {
-    if ($this->langCode !== 'en') {
-      $node = $node->getTranslation($this->langCode);
-    }
+    $node = $this->provideTranslation($node);
     $data = new \StdClass;
     $data->valid = false;
     if (is_object($node)) {
@@ -399,7 +399,12 @@ class ContentController extends ControllerBase {
               break;
           }
         } else if ($matchTarget && isset($val['target_id'])) {
-          $row = (int) $val['target_id'];
+          if ($type == 'paragraph') {
+            $row['id'] = (int) $val['target_id'];
+            $row['revision_id'] = (int) $val['target_revision_id'];
+          } else {
+            $row = (int) $val['target_id'];  
+          }
         } else {
           $row = $val;
         }
@@ -498,9 +503,11 @@ class ContentController extends ControllerBase {
   }
 
   private function getSection($id = 0, $index = 0) {
-    if ($id > 0) {
-      $para = Paragraph::load($id);
+    if ($id['id'] > 0) {
+      $para = Paragraph::load($id['id']);
       if (is_object($para)) {
+        $para = \Drupal::entityTypeManager()->getStorage('paragraph')->loadRevision($id['revision_id']);
+
         $section = $this->parseFields($para, $this->paraFields);
         if (is_object($section) && empty($section)) {
           
@@ -575,6 +582,25 @@ class ContentController extends ControllerBase {
       $value = $default;
     }
     return $value;
+  }
+
+  private function provideTranslation($entity, $type = 'node') {
+    if ($this->langCode !== 'en') {
+      $val = $entity->get('langcode')->getValue();
+      if (is_array($val) && isset($val[0]['value'])) {
+        $lc = $val[0]['value'];
+        if ($lc != $this->langCode) {
+          if ($entity->hasTranslation($this->langCode)) {
+
+            $ent = $entity->getTranslation($this->langCode);
+            if ($ent instanceof \Drupal\Core\Entity\ContentEntityBase) {
+              return $ent;
+            }
+          }
+        }
+      }
+    }
+    return $entity;
   }
 
 }

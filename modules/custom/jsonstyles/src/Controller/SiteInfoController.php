@@ -31,7 +31,11 @@ class SiteInfoController extends ControllerBase {
 	}
 
 	function jsonView() {
-
+		$data = $this->siteData();
+		return new JsonResponse($data);
+	}
+	function siteData() {
+		$data = array();
 		$menu = $this->extractMenu('main');
 		$data['menu']    = $menu;
 		$jsSettings      = \Drupal::config('jsonstyles.settings');
@@ -59,6 +63,7 @@ class SiteInfoController extends ControllerBase {
 			$data['ecwid_store_key'] = 'PSecwid__'.$storeId.'PScart';
 			$data['ecwid_products'] = ecwid_product_list();
 			$data['pages'] = [];
+
 			foreach ($menu as $mItem) {
 				$nodeData = $content->pathData($mItem['link']);
 				if ($nodeData->valid) {
@@ -66,7 +71,7 @@ class SiteInfoController extends ControllerBase {
 				}
 			}
 		}
-		return new JsonResponse($data);
+		return $data;
 	}
 
 	protected function extractMenu($menuName = 'main') {
@@ -132,15 +137,6 @@ class SiteInfoController extends ControllerBase {
 
 	function writeSnippets() {
 
-		$view = \Drupal\views\Views::getView('projects');
-		$view->setDisplay('block_1');
-		if (is_object($view)) {
-			$render = $view->render();
-			if (is_array($render) && !empty($render)) {
-				jsonstyles_write_snippet('projects.html', render($render));
-			}
-		}
-
 		$menu_html = $this->renderMenuTree();
 		if (!empty($menu_html)) {
 			jsonstyles_write_snippet('main.menu', $menu_html);
@@ -158,52 +154,17 @@ class SiteInfoController extends ControllerBase {
 
 		usleep(50);
 		$this->writeCoreData();
+		usleep(250);
+		jsonstyles_build_template();
 		usleep(50);
 		return new RedirectResponse('/admin/content');
 	}
 
 	function writeCoreData() {
-		$content = new ContentController();
-		
-		$strData = '';
-		$core = $this->siteData();
-		$json = Json::encode($core);
-		$strData .= "\n" . 'var $preload={};';
-		if (is_string($json)) {
-			$strData .= "\n".'$preload.site_info = '.$json.";\n";
-		}
-		$extraPreloadAliases = array();
-		if (isset($core->nodes) && is_array($core->nodes)) {
-			foreach ($core->nodes as $nd) {
-				if (!preg_match('#^/(home|projects)#', $nd->alias) && strlen($nd->alias) > 2) {
-					$alias = 'node_full__' . $nd->nid;
-					$extraPreloadAliases[$alias] = '/jsonstyles/node-full/' . $nd->nid;
-				}
-			}
-		}
-		usleep(250);
-		$data = $content->homeNode();
+		$data = $this->siteData();
 		$json = Json::encode($data);
 		if (is_string($json)) {
-			$strData .= "\n".'$preload.home_slides = '.$json.";\n";
-		}
-		usleep(250);
-		$data  = $content->productsFullData();
-		$json = Json::encode($data);
-		if (is_string($json)) {
-			$strData .= "\n".'$preload.products = '.$json.";\n";
-		}
-		if (!empty($extraPreloadAliases)) {
-			foreach ($extraPreloadAliases as $key => $path) {
-				$data = $content->nodeFullData($path);
-				if ($data->valid) {
-					$json = Json::encode($data);
-					if (is_string($json)) {
-						$strData .= "\n".'$preload.'.$key.' = '.$json.";\n";
-						usleep(250);
-					}
-				}
-			}
+			$strData = 'var $siteinfo = '.$json.";\n";
 		}
 		jsonstyles_write_snippet('core-data.json', $strData);
 	}
