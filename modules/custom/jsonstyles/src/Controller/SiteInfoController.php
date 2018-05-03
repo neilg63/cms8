@@ -50,6 +50,8 @@ class SiteInfoController extends ControllerBase {
 		$data['site_name']   = $config->get('name');
 		$slogan              = $config->get('slogan');
 		$data['site_slogan'] = $slogan;
+		$data['lang'] = $this->langCode;
+		$data['nf'] = '.';
 		$parts               = explode('|', $slogan);
 		$data['owner']       = trim($parts[0]);
 		$strapline           = count($parts) > 1?trim($parts[1]):'';
