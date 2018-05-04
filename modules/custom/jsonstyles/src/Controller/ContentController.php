@@ -53,6 +53,8 @@ class ContentController extends ControllerBase {
   ];
 
   protected $paraFields = [
+    'id' => ['multiple' => false, 'type' => 'int'],
+    'revision_id' => ['multiple' => false, 'type' => 'int'],
     'field_title' => ['multiple' => false, 'type' => 'string'],
     'field_text' => ['multiple' => true, 'type' => 'string'],
     'field_images' => ['multiple' => true, 'type' => 'image'],
