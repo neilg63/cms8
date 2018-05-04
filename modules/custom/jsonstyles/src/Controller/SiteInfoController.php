@@ -36,7 +36,8 @@ class SiteInfoController extends ControllerBase {
 	}
 	function siteData() {
 		$data = array();
-		$menu = $this->extractMenu('main');
+		$menu = $this->getMenuTree('main');
+
 		$data['menu']    = $menu;
 		$jsSettings      = \Drupal::config('jsonstyles.settings');
 		$copyrightNotice = $jsSettings->get('copyright');
@@ -73,42 +74,45 @@ class SiteInfoController extends ControllerBase {
 			$data['pages'] = [];
 
 			foreach ($menu as $mItem) {
-				$nodeData = $content->pathData($mItem['link']);
+				$nodeData = $content->pathData($mItem->link);
 				if ($nodeData->valid) {
-					$data['pages'][$mItem['link']] = $nodeData;
+					$data['pages'][$mItem->link] = $nodeData;
+					if ($this->langCode != 'en') {
+						$this->matchMenu($data,$mItem->link,$nodeData->title);
+					}
 				}
 			}
 		}
 		return $data;
 	}
 
-	protected function extractMenu($menuName = 'main') {
-		$html  = $this->renderMenuTree($menuName);
-		$parts = explode('</li>', $html);
-		$json  = array();
-		$regex = '#<a\b[^>"]*?href="([^>"]*?)".*?>([^<]*?)</a>#i';
-		foreach ($parts as $part) {
-			if (strpos($part, '<a') >= 0) {
-				if (preg_match($regex, $part, $match)) {
-					$link = preg_replace('#^/[a-z][a-z]/?(\w+.*?)?$#', "/$1", $match[1]);
-					if (strlen($link) > 3 && strpos($link, '/node/') === 0) {
-						
-						$link = \Drupal::service('path.alias_manager')->getAliasByPath($link, 'en');
-
-					}
-					$json[] = array('link' => $link, 'title' => html_entity_decode($match[2]));
+	protected function matchMenu(array &$data, $link, $title) {
+		if (isset($data['menu'])) {
+			foreach ($data['menu'] as $item) {
+				if ($item->link == $link) {
+					$item->title = $title;
 				}
 			}
 		}
-		return $json;
 	}
 
-	protected function renderMenuTree($menuName = 'main') {
+	protected function handleMenuItem($item) {
+		$mi = new \StdClass;
+		$mi->title = $item['title'];
+		$mi->link = $item['url']->toString();
+		$mi->link = preg_replace('#^/[a-z][a-z]/?(\w+.*?)?$#', "/$1", $mi->link);
+		if (strlen($mi->link) > 3) {
+			$mi->link = \Drupal::service('path.alias_manager')->getAliasByPath($mi->link, 'en');
+		}
+		return $mi;
+	}
+
+	protected function getMenuTree($menuName = 'main') {
 		$menu_tree    = \Drupal::menuTree();
 		$menu_name    = $menuName;
 		$parameters   = $menu_tree->getCurrentRouteMenuTreeParameters($menu_name);
 		$tree         = $menu_tree->load($menu_name, $parameters);
-		$menu         = $menu_tree->build($tree);
+
 		$manipulators = array(
 			// Only show links that are accessible for the current user.
 			array('callable' => 'menu.default_tree_manipulators:checkAccess'),
@@ -119,8 +123,14 @@ class SiteInfoController extends ControllerBase {
 
 		// Finally, build a renderable array from the transformed tree.
 		$menu = $menu_tree->build($tree);
-
-		return drupal_render($menu);
+		$menu_links = array();
+		if (isset($menu['#items']) && is_array($menu['#items'])) {
+			$items = $menu['#items'];
+			foreach ($items as $item) {
+				$menu_links[] = $this->handleMenuItem($item);
+			}
+		}
+		return $menu_links;
 	}
 
 	function userView() {
@@ -151,10 +161,6 @@ class SiteInfoController extends ControllerBase {
 
 	function writeSnippets() {
 
-		$menu_html = $this->renderMenuTree();
-		if (!empty($menu_html)) {
-			jsonstyles_write_snippet('main.menu', $menu_html);
-		}
 		$data = $this->allNodeAliasTitles();
 
 		foreach ($data as $row) {
