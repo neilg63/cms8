@@ -4,8 +4,8 @@ package: Field types
 # core: 8.x
 type: module
 
-# Information added by Drupal.org packaging script on 2017-10-14
-version: '8.x-3.1'
+# Information added by Drupal.org packaging script on 2018-04-21
+version: '8.x-3.2'
 core: '8.x'
 project: 'double_field'
-datestamp: 1507987519
+datestamp: 1524292087

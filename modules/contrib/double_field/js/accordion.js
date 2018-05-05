@@ -15,6 +15,7 @@
           collapsible: true,
           active: false
         });
+
     }
   };
 
