@@ -61,7 +61,7 @@ class ContentController extends ControllerBase {
     'field_image' => ['multiple' => false, 'type' => 'image'],
     'field_media' => ['multiple' => false, 'type' => 'media'],
     'field_video' => ['multiple' => false, 'type' => 'media'],
-    'field_link' => ['multiple' => true, 'type' => 'link'],
+    'field_links' => ['multiple' => true, 'type' => 'link'],
     'field_layout' => ['multiple' => false, 'type' => 'string'],
     'field_products' => ['multiple' => true, 'type' => 'ref'],
     'field_text_layout' => ['multiple' => false, 'type' => 'string']
@@ -253,6 +253,7 @@ class ContentController extends ControllerBase {
       }
     }
     $this->mergeWithImages($item, 'alignment', 'center');
+    $this->mergeWithImages($item, 'links', null, 'link');
     $this->mergeWithImages($item, 'styles', '');
     if (empty($item->image) && !empty($item->svg) && is_array($item->svg)) {
       $item->image = $item->svg;
@@ -330,8 +331,11 @@ class ContentController extends ControllerBase {
     }
   }
 
-  private function mergeWithImages($item, $sourceName = '', $default = '') {
+  private function mergeWithImages($item, $sourceName = '', $default = '', $target = '') {
     if (isset($item->{$sourceName}) && !empty($item->{$sourceName}) && !empty($item->images)) {
+       if (empty($target)) {
+         $target = $sourceName;
+       }
        if (is_array($item->images) && is_array($item->{$sourceName})) {
          foreach ($item->images as $index => $image) {
            if (array_key_exists($index, $item->{$sourceName})) {
@@ -339,7 +343,7 @@ class ContentController extends ControllerBase {
            } else {
              $val = $default;
            }
-           $item->images[$index][$sourceName] = $val;
+           $item->images[$index][$target] = $val;
          }
        }
        unset($item->{$sourceName});
