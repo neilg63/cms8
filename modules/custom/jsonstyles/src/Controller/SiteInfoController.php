@@ -58,13 +58,9 @@ class SiteInfoController extends ControllerBase {
 		$data['strapline']   = $strapline;
 		$content = new ContentController();
 		$data['home'] = $content->pathData('home');
-		$edited        = $this->allNodeAliasTitles();
-                $timestamps = array();
-                foreach ($edited as $row) {
-		  $timestamps[] = (int) $row->changed;
-		}
-                $data['last_edited'] = max($timestamps);
-		$data['nodes']       = $edited;
+		$nodes = $this->allNodeAliasTitles();
+                $data['last_edited'] = $this->calcLastEdited($nodes);
+		//$data['nodes']       = $nodes;
                 $data['valid'] = !empty($menu);
 		if (function_exists('ecwid_product_list')) {
 			$ecSettings = \Drupal::config('ecwid.settings');
@@ -159,19 +155,28 @@ class SiteInfoController extends ControllerBase {
 		return new JsonResponse($data);
 	}
 
-	function writeSnippets() {
-
+	function writeSnippets($langCode = 'en') {
+          $config              = \Drupal::config('system.site');
+          $site_name   = $config->get('name');
+          $slogan              = $config->get('slogan'); 
+          jsonstyles_write_snippet('site.title', $site_name);
+          jsonstyles_write_snippet('site.slogan', $slogan);
 		$data = $this->allNodeAliasTitles();
-
 		foreach ($data as $row) {
 			$node = node_load($row->nid);
-			if (is_object($node) && $node instanceof EntityInterface) {
-
+			if (is_object($node)) {
+                   if ($node->get('langcode')->value != $langCode) {
+                     if ($node->hasTranslation($langCode)) {
+                        $node = $node->getTranslation($langCode);
+                     }
+                   }
 				jsonstyles_render_node_snippet($node, $row->alias);
 
 			}
 		}
-
+	        $last_edited = $this->calcLastEdited($data);
+                $html = '<input type="hidden" name="last_edited_timestamp" id="last-edited-timestamp" value="'.$last_edited.'"/>';
+                jsonstyles_write_snippet('last_edited.value', $html);
 		usleep(50);
 		$this->writeCoreData();
 		usleep(250);
@@ -179,6 +184,14 @@ class SiteInfoController extends ControllerBase {
 		usleep(50);
 		return new RedirectResponse('/admin/content');
 	}
+
+        private function calcLastEdited(array $edited = array()) {
+          $timestamp = array();
+          foreach ($edited as $row) {
+            $timestamps[] = (int) $row->changed;
+          }
+          return  max($timestamps);
+        }
 
 	function writeCoreData() {
 		$data = $this->siteData();

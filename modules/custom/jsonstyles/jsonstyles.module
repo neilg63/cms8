@@ -114,9 +114,10 @@ function jsonstyles_preloaded() {
   $snippets_dir = jsonstyles_snippets_directory_path();
   $files = [
     'meta' => '__home.meta',
-    'title' => '__home.title',
+    'title' => 'site.title',
     'content' => '__home.meta',
-    'core' => 'core-data.json'
+    'last_edited' => 'last_edited.value',
+    //'core' => 'core-data.json'
   ];
 
   foreach ($files as $key => $fn) {
@@ -222,7 +223,7 @@ function jsonstyles_build_url($node, $alias = '') {
 }
 
 function jsonstyles_twitter_cards(array $data) {
-  $html = jsonstyles_metatag('twitter.card','summary','name');
+  $html = jsonstyles_metatag('twitter.card',$data['description'],'name');
   
   foreach ($data as $key => $value) {
     switch ($key) {
