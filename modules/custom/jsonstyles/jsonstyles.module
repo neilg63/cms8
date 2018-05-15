@@ -115,7 +115,8 @@ function jsonstyles_preloaded() {
   $files = [
     'meta' => '__home.meta',
     'title' => 'site.title',
-    'content' => '__home.meta',
+    'home_slides' => 'home_slides.html',
+    'content' => '__home.html',
     'last_edited' => 'last_edited.value',
     //'core' => 'core-data.json'
   ];
