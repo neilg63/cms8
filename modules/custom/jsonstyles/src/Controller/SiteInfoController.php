@@ -103,11 +103,13 @@ class SiteInfoController extends ControllerBase {
     return $mi;
   }
 
-  protected function getMenuTree($menuName = 'main') {
+  protected function getMenuTree($menuName = 'main') { 
+    \Drupal::configFactory()->getEditable('system.site')
+      ->set('default_langcode', $this->langCode)->save();
     $menu_tree    = \Drupal::menuTree();
-    $menu_name    = $menuName;
-    $parameters   = $menu_tree->getCurrentRouteMenuTreeParameters($menu_name);
-    $tree         = $menu_tree->load($menu_name, $parameters);
+    $parameters   = $menu_tree->getCurrentRouteMenuTreeParameters($menuName);
+
+    $tree         = $menu_tree->load($menuName, $parameters);
 
     $manipulators = array(
       // Only show links that are accessible for the current user.
@@ -176,7 +178,7 @@ class SiteInfoController extends ControllerBase {
     }
     $last_edited = $this->calcLastEdited($data);
     $html = '<input type="hidden" id="last-edited-timestamp" value="'.$last_edited.'"/>';
-    
+
     jsonstyles_write_snippet('last_edited.value', $html);
     usleep(50);
     $this->writeCoreData();
