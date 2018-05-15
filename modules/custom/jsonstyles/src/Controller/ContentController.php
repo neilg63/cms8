@@ -281,11 +281,12 @@ class ContentController extends ControllerBase {
           $out[] = $this->getTerm($val);
           break;
         case 'paragraph':
-          //$val = (int) $val;
-          $section = $this->getSection($val, $index);
-          if (!empty($section)) {
-            $out[] = $section;
-            $index++;
+          if (is_array($val) && isset($val['id'])) {
+             $section = $this->getSection($val, $index);
+            if (!empty($section)) {
+              $out[] = $section;
+              $index++;
+            }
           }
           break;
         case 'image':
