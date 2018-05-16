@@ -69,15 +69,15 @@ class SiteInfoController extends ControllerBase {
       $data['ecwid_products'] = ecwid_product_list();
       $data['pages'] = [];
 
-      /*foreach ($menu as $mItem) {
+     foreach ($menu as $mItem) {
         $nodeData = $content->pathData($mItem->link);
         if ($nodeData->valid) {
           $data['pages'][$mItem->link] = $nodeData;
-          if ($this->langCode != 'en') {
+          /*if ($this->langCode != 'en') {
             $this->matchMenu($data,$mItem->link,$nodeData->title);
-          }
+          }*/
         }
-      }*/
+      }
     }
     return $data;
   }
